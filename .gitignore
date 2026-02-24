@@ -1,41 +1,28 @@
-# Prerequisites
-*.d
+.vs
+client/x64
+engine/x64
+test/x64
+/x64
+artifacts
+client/bin
+engine/bin
+test/bin
+client/obj
+engine/obj
+test/obj
+engine/doc
+docs
 
-# Compiled Object files
-*.slo
-*.lo
-*.o
-*.obj
+# Cartelle di output
+bin/
+build/
+dist/
+artifacts/
 
-# Precompiled Headers
-*.gch
-*.pch
+# File di sistema e IDE
+.DS_Store
+.vscode/
+.idea/
 
-# Linker files
-*.ilk
-
-# Debugger Files
-*.pdb
-
-# Compiled Dynamic libraries
-*.so
-*.dylib
-*.dll
-
-# Fortran module files
-*.mod
-*.smod
-
-# Compiled Static libraries
-*.lai
-*.la
-*.a
-*.lib
-
-# Executables
-*.exe
-*.out
-*.app
-
-# debug information files
-*.dwo
+# File temporanei
+temp_package/

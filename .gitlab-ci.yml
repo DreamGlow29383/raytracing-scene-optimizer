@@ -1,0 +1,58 @@
+stages:
+  - structure
+  - build_and_test
+  - package
+
+image: gitlab-edu.supsi.ch:5050/dti-isin/labingsw/common:ubuntu2404-cg
+
+variables:
+  MAKEFLAGS: "-j$(nproc)"
+  DEBIAN_FRONTEND: noninteractive #see if we need this
+  GIT_DEPTH: "1"
+  # Cancella la cartella ogni volta per evitare corruzioni
+  GIT_STRATEGY: clone
+
+
+structure:
+  stage: structure
+  script:
+    - '[ -d engine ] || exit 1'
+    - '[ -d client ] || exit 1'
+
+build_and_test:
+  stage: build_and_test
+  before_script:
+    - echo "Installing missing dependencies..."
+    - apt install -y libassimp-dev
+  script:
+    - echo "Clean successfull, engine build next..."
+    - make engine   # Costruisce Engine
+    - echo "Engine build successfull, client build next..."
+    - make client   # Costruisce Client
+    - echo "Client build successfull, doing tests next..."
+    - make test     # Esegue i test (se fallisce, la pipeline si ferma qui)
+    - echo "All tests passed!"
+  artifacts:
+    paths:
+      - engine/bin/Release/libengine.so
+      - client/bin/Release/client
+    expire_in: 1 hours
+  rules:
+    - if: $CI_COMMIT_BRANCH == "dev" || $CI_COMMIT_BRANCH == "main"
+
+release:
+  stage: package
+  dependencies:
+    - build_and_test
+  before_script:
+    - echo "Installing missing dependencies..."
+    - apt install -y libassimp-dev
+  script:
+    - echo "Packaging all artifacts..."
+    - make package
+  artifacts:
+    name: "CG_Group12_project_release.tar.gz"
+    paths:
+      - artifacts/CG_Group12_project_release.tar.gz
+  rules:
+    - if: $CI_COMMIT_BRANCH == "dev" || $CI_COMMIT_BRANCH == "main"
