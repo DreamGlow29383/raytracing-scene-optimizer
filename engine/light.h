@@ -57,18 +57,6 @@ public:
 	void setIntensity(float intensity);
 
 	/**
-	 * @brief Sets if the light can cast shadows
-	 * @param castShadow True if the light can cast shadows
-	 */
-	void setCastShadow(bool castShadow);
-
-	/**
-	 * @brief Gets if the light can cast shadows
-	 * @return True if the light can cast shadows
-	 */
-	bool getCastShadow() const;
-
-	/**
 	 * @brief Renders the light (sets shader uniforms).
 	 * @param cameraInverse The inverse of the camera's world transformation matrix.
 	 */

@@ -57,16 +57,6 @@ ENG_API void Light::setIntensity(float intensity)
 	m_intensity = intensity;
 }
 
-void Light::setCastShadow(bool castShadow)
-{
-	m_castShadow = castShadow;
-}
-
-bool Light::getCastShadow() const
-{
-	return m_castShadow;
-}
-
 ENG_API void Light::render(glm::mat4 cameraInverse)
 {
 	if (lightCount >= 8) {
