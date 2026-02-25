@@ -91,7 +91,6 @@
     <ClCompile Include="importer.cpp" />
     <ClCompile Include="key_event.cpp" />
     <ClCompile Include="light.cpp" />
-    <ClCompile Include="material.cpp" />
     <ClCompile Include="mesh.cpp" />
     <ClCompile Include="node.cpp">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">false</ExcludedFromBuild>
@@ -99,7 +98,6 @@
     </ClCompile>
     <ClCompile Include="object.cpp" />
     <ClCompile Include="scene.cpp" />
-    <ClCompile Include="texture.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="frame_event.h" />
@@ -109,12 +107,10 @@
     <ClInclude Include="importer.h" />
     <ClInclude Include="key_event.h" />
     <ClInclude Include="light.h" />
-    <ClInclude Include="material.h" />
     <ClInclude Include="mesh.h" />
     <ClInclude Include="node.h" />
     <ClInclude Include="object.h" />
     <ClInclude Include="scene.h" />
-    <ClInclude Include="texture.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

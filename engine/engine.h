@@ -216,13 +216,6 @@ public:
     void setNodeLightColor(int id, glm::vec3 color);
 
     /**
-     * @brief Sets if a given light can cast shadows.
-     * @param id The ID of the node.
-     * @param castShadow True if the light can cast shadows
-     */
-    void setNodeLightCastShadow(int id, bool castShadow);
-
-    /**
 	 * @brief Adds a camera node as a child of the specified parent node.
 	 * @param parent The ID of the parent node.
 	 * @param config The configuration for the camera node.
@@ -253,21 +246,6 @@ public:
     int addNodeFromFile(const std::string& filepath);
 
     /**
-	 * @brief Adds a shadow plane to the scene.
-	 * @param config The configuration for the shadow plane.
-	 * @return The ID of the newly created shadow plane node.
-     */
-    int addShadowPlane(ShadowPlaneConfig config);
-
-    /**
-	 * @brief Adds a shadow plane as a child of the specified parent node.
-	 * @param parent The ID of the parent node.
-	 * @param config The configuration for the shadow plane.
-	 * @return The ID of the newly created shadow plane node.
-     */
-    int addShadowPlane(int parent, ShadowPlaneConfig config);
-
-    /**
      * @brief Add text to be displayed on screen.
      * @param text The text to add.
      */
@@ -279,13 +257,6 @@ public:
 	 * @param transform The transformation matrix to set.
      */
     void setNodeTransform(int id, glm::mat4 transform);
-
-    /**
-	 * @brief Sets whether the node's camera casts shadows.
-	 * @param id The ID of the node.
-	 * @param castsShadow True if the camera should cast shadows, false otherwise.
-     */
-    void setCastsShadow(int id, bool castsShadow);
 
     /**
 	 * @brief Gets the transformation matrix of a node.

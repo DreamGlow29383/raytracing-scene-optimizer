@@ -2,7 +2,6 @@
 
 #include "light.h"
 #include "mesh.h"
-#include "shadow_plane.h"
 
 #include <iostream>
 #include <algorithm>
@@ -48,12 +47,10 @@ void Scene::computeRenderList() {
             Light* lightB = dynamic_cast<Light*>(b);
             Mesh* meshA = dynamic_cast<Mesh*>(a);
             Mesh* meshB = dynamic_cast<Mesh*>(b);
-            ShadowPlane* shadowA = dynamic_cast<ShadowPlane*>(a);
-            ShadowPlane* shadowB = dynamic_cast<ShadowPlane*>(b);
 
             // Priority: Lights (1) > Meshes (2) > ShadowPlanes (3)
-            int priorityA = lightA ? 1 : (meshA ? 2 : (shadowA ? 3 : 4));
-            int priorityB = lightB ? 1 : (meshB ? 2 : (shadowB ? 3 : 4));
+            int priorityA = lightA ? 1 : (meshA ? 2 : 3);
+            int priorityB = lightB ? 1 : (meshB ? 2 : 3);
 
             if (priorityA != priorityB) {
                 return priorityA < priorityB;
@@ -61,12 +58,6 @@ void Scene::computeRenderList() {
 
             if (meshA && meshB) {
                 // Sort meshes by distance (front-to-back)
-                glm::vec3 posA = a->getWC()[3];
-                glm::vec3 posB = b->getWC()[3];
-                return glm::distance(posA, cameraPos) < glm::distance(posB, cameraPos);
-            }
-
-            if (shadowA && shadowB) {
                 glm::vec3 posA = a->getWC()[3];
                 glm::vec3 posB = b->getWC()[3];
                 return glm::distance(posA, cameraPos) < glm::distance(posB, cameraPos);
@@ -83,9 +74,8 @@ std::vector<Node*> Scene::getRenderList() {
 void Scene::pass(Node* node) {
     Light* light = dynamic_cast<Light*>(node);
     Mesh* mesh = dynamic_cast<Mesh*>(node);
-    ShadowPlane* shadowPlane = dynamic_cast<ShadowPlane*>(node);
 
-    if (light != nullptr || mesh != nullptr || shadowPlane != nullptr) {
+    if (light != nullptr || mesh != nullptr) {
         _renderList.push_back(node);
     }
 

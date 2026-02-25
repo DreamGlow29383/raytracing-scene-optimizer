@@ -60,12 +60,6 @@
     <ClCompile Include="scene.cpp">
       <Filter>Source Files\scene</Filter>
     </ClCompile>
-    <ClCompile Include="texture.cpp">
-      <Filter>Source Files\scene</Filter>
-    </ClCompile>
-    <ClCompile Include="material.cpp">
-      <Filter>Source Files\scene</Filter>
-    </ClCompile>
     <ClCompile Include="light.cpp">
       <Filter>Source Files\scene</Filter>
     </ClCompile>
@@ -89,9 +83,6 @@
     <ClInclude Include="key_event.h">
       <Filter>Header Files\events</Filter>
     </ClInclude>
-    <ClInclude Include="texture.h">
-      <Filter>Header Files\scene</Filter>
-    </ClInclude>
     <ClInclude Include="scene.h">
       <Filter>Header Files\scene</Filter>
     </ClInclude>
@@ -102,9 +93,6 @@
       <Filter>Header Files\scene</Filter>
     </ClInclude>
     <ClInclude Include="mesh.h">
-      <Filter>Header Files\scene</Filter>
-    </ClInclude>
-    <ClInclude Include="material.h">
       <Filter>Header Files\scene</Filter>
     </ClInclude>
     <ClInclude Include="light.h">

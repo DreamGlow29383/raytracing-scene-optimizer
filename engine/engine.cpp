@@ -244,17 +244,6 @@ void Eng::Base::setNodeLightColor(int id, glm::vec3 color)
     }
 }
 
-void Eng::Base::setNodeLightCastShadow(int id, bool castShadow)
-{
-    Node* node = this->getCurrentScene()->getNode(id);
-    Light* light = dynamic_cast<Light*>(node);
-
-    if (light != nullptr)
-    {
-        light->setCastShadow(castShadow);
-    }
-}
-
 int ENG_API Eng::Base::addNodeCamera(int parent, Eng::CameraConfig config) {
     Camera* camera = new Camera();
     camera->setConfig(config);
@@ -288,13 +277,6 @@ void ENG_API Eng::Base::addSceneText(std::string text) {
 
 void ENG_API Eng::Base::setNodeTransform(int id, glm::mat4 transform) {
     getCurrentScene()->getNode(id)->setTransform(transform);
-}
-
-void ENG_API Eng::Base::setCastsShadow(int id, bool castsShadow) {
-    Node* node = getCurrentScene()->getNode(id);
-    Mesh* mesh = dynamic_cast<Mesh*>(node);
-    if (mesh)
-        mesh->castsShadow(castsShadow);
 }
 
 glm::mat4 ENG_API Eng::Base::getNodeTransform(int id) {
