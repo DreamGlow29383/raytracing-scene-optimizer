@@ -2,7 +2,6 @@
 
 #include "engine.h"
 #include "node.h"
-#include "shadow_plane.h"
 #include "light.h"
 #include "camera.h"
 #include "mesh.h"
@@ -197,7 +196,6 @@ void printNodeHierarchy(Node* node, const std::string& prefix, bool isLast, bool
 	if (dynamic_cast<Mesh*>(node)) nodeType = "Mesh";
 	else if (dynamic_cast<Light*>(node)) nodeType = "Light";
 	else if (dynamic_cast<Camera*>(node)) nodeType = "Camera";
-	else if (dynamic_cast<ShadowPlane*>(node)) nodeType = "ShadowPlane";
 
 	std::cout << node->getId() << " : " << "[" << nodeType << "] " << node->getName() << std::endl;
 

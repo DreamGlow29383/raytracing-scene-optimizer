@@ -72,9 +72,6 @@
     <ClCompile Include="camera.cpp">
       <Filter>Source Files\scene</Filter>
     </ClCompile>
-    <ClCompile Include="shadow_plane.cpp">
-      <Filter>Source Files\scene</Filter>
-    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="engine.h">
@@ -114,9 +111,6 @@
       <Filter>Header Files\scene</Filter>
     </ClInclude>
     <ClInclude Include="camera.h">
-      <Filter>Header Files\scene</Filter>
-    </ClInclude>
-    <ClInclude Include="shadow_plane.h">
       <Filter>Header Files\scene</Filter>
     </ClInclude>
   </ItemGroup>

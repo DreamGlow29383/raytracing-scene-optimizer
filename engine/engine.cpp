@@ -5,7 +5,6 @@
 #include "scene.h"
 #include "light.h"
 #include "camera.h"
-#include "shadow_plane.h"
 #include "importer.h"
 #include "frame_event.h"
 
@@ -281,21 +280,6 @@ int ENG_API Eng::Base::addNodeFromFile(int parent, const std::string& filepath) 
 
 int ENG_API Eng::Base::addNodeFromFile(const std::string& filepath) {
     return addNodeFromFile(currentSceneId, filepath);
-}
-
-int ENG_API Eng::Base::addShadowPlane(int parent, ShadowPlaneConfig config) {
-    ShadowPlane* plane = new ShadowPlane();
-    plane->setType(config.type);
-    plane->setRadius(config.radius);
-    plane->setShadowColor(config.color);
-    plane->setShadowOffset(config.offset);
-
-    this->addNodeTo(getCurrentScene()->getNode(parent), plane);
-    return plane->getId();
-}
-
-int ENG_API Eng::Base::addShadowPlane(ShadowPlaneConfig config) {
-    return addShadowPlane(currentSceneId, config);
 }
 
 void ENG_API Eng::Base::addSceneText(std::string text) {

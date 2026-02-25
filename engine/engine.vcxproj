@@ -99,7 +99,6 @@
     </ClCompile>
     <ClCompile Include="object.cpp" />
     <ClCompile Include="scene.cpp" />
-    <ClCompile Include="shadow_plane.cpp" />
     <ClCompile Include="texture.cpp" />
   </ItemGroup>
   <ItemGroup>
@@ -115,7 +114,6 @@
     <ClInclude Include="node.h" />
     <ClInclude Include="object.h" />
     <ClInclude Include="scene.h" />
-    <ClInclude Include="shadow_plane.h" />
     <ClInclude Include="texture.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
