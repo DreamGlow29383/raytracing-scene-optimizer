@@ -44,4 +44,7 @@ public:
 private:
     std::vector<Vertex> m_vertices;
     std::vector<unsigned int> m_indices;
+
+    glm::vec3 lowerBoundsCorner;
+    glm::vec3 upperBoundsCorner;
 };

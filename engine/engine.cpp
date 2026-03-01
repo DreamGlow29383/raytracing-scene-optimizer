@@ -257,14 +257,20 @@ int ENG_API Eng::Base::addNodeCamera(Eng::CameraConfig config) {
 }
 
 int ENG_API Eng::Base::addNodeFromFile(int parent, const std::string& filepath) {
-    std::vector<Node*> objects = importFile(filepath);
+    std::vector<Vertex> outVertices;
+    std::vector<unsigned int> outIndices;
+    bool success = importFile(filepath, outVertices, outIndices);
 
-    for (Node* object : objects) {
-        std::cout << "[+] Mesh Loaded: " << object->getName() << std::endl;
-        addNodeTo(getCurrentScene()->getNode(parent), object);
+    if (success) {
+        Mesh* mesh = new Mesh();
+        mesh->setVertices(outVertices, outIndices);
+        mesh->setName("Mesh");
+        std::cout << "[+] Mesh Loaded: " << mesh->getName() << std::endl;
+        addNodeTo(getCurrentScene()->getNode(parent), mesh);
+        return mesh->getId();
     }
 
-    return objects.at(0)->getId();
+    return NULL;
 }
 
 int ENG_API Eng::Base::addNodeFromFile(const std::string& filepath) {
