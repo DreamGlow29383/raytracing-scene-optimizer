@@ -1,6 +1,8 @@
 #include "node.h"
 
+#include <GL/glew.h>
 #include <GL/freeglut.h>
+
 #include <iostream>
 
 ENG_API Node::Node()

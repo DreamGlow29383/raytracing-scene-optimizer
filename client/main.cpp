@@ -69,7 +69,7 @@ int main(int argc, char *argv[])
 	glm::mat4 lightPos = glm::translate(glm::mat4(1.0f), glm::vec3(5.0f, 5.0f, 5.0f));
 	eng.setNodeTransform(lightId, lightPos);
 
-	eng.addNodeFromFile("models/suzanne.glb");
+	eng.addNodeFromFile("models/mercedes.glb");
 
 	eng.bindSceneEvent(3, moveCameraEvent);
 	eng.bindSceneEvent('w', 3, cameraUpEvent);

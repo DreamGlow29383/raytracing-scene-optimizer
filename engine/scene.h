@@ -10,7 +10,6 @@
 #include "frame_event.h"
 #include "key_event.h"
 
-#include <GL/freeglut.h>
 #include <map>
 
  /**

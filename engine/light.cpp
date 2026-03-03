@@ -1,6 +1,8 @@
 #include "light.h"
 
+#include <GL/glew.h>
 #include <GL/freeglut.h>
+
 #include <glm/gtc/type_ptr.hpp>
 #include <iostream>
 
