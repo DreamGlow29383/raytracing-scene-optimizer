@@ -174,28 +174,6 @@ void Mesh::renderBoundingBox()
     }
     glEnd();
 
-    // Add small coordinate axes at the center of the bounding box for orientation
-    glm::vec3 center = (min + max) * 0.5f;
-    float size = glm::length(max - min) * 0.2f;
-
-    glLineWidth(1.0f);
-    glBegin(GL_LINES);
-    // X axis (red)
-    glColor3f(1.0f, 0.0f, 0.0f);
-    glVertex3f(center.x - size, center.y, center.z);
-    glVertex3f(center.x + size, center.y, center.z);
-
-    // Y axis (green)
-    glColor3f(0.0f, 1.0f, 0.0f);
-    glVertex3f(center.x, center.y - size, center.z);
-    glVertex3f(center.x, center.y + size, center.z);
-
-    // Z axis (blue)
-    glColor3f(0.0f, 0.0f, 1.0f);
-    glVertex3f(center.x, center.y, center.z - size);
-    glVertex3f(center.x, center.y, center.z + size);
-    glEnd();
-
     // Restore previous state
     glPopAttrib();
 }
