@@ -1,6 +1,7 @@
 #include "mesh.h"
 
 #include <iostream>
+#include <math.h>
 
 #include <GL/glew.h>
 #include <GL/freeglut.h>
@@ -66,18 +67,37 @@ void Mesh::setVertices(const std::vector<Vertex>& vertices, const std::vector<un
             upperCorner.z = v.z;
     }
 
-    std::cout << "Lower Corner Coords: " << std::endl;
-    std::cout << "X: " << lowerCorner.x << std::endl;
-    std::cout << "Y: " << lowerCorner.y << std::endl;
-    std::cout << "Z: " << lowerCorner.z << std::endl;
-
-    std::cout << "Upper Corner Coords: " << std::endl;
-    std::cout << "X: " << upperCorner.x << std::endl;
-    std::cout << "Y: " << upperCorner.y << std::endl;
-    std::cout << "Z: " << upperCorner.z << std::endl;
-
     lowerBoundsCorner = lowerCorner;
     upperBoundsCorner = upperCorner;
+
+    glm::vec3 corners[8] = {
+        glm::vec3(lowerBoundsCorner.x, lowerBoundsCorner.y, lowerBoundsCorner.z), // 0
+        glm::vec3(upperBoundsCorner.x, lowerBoundsCorner.y, lowerBoundsCorner.z), // 1
+        glm::vec3(upperBoundsCorner.x, upperBoundsCorner.y, lowerBoundsCorner.z), // 2
+        glm::vec3(lowerBoundsCorner.x, upperBoundsCorner.y, lowerBoundsCorner.z), // 3
+        glm::vec3(lowerBoundsCorner.x, lowerBoundsCorner.y, upperBoundsCorner.z), // 4
+        glm::vec3(upperBoundsCorner.x, lowerBoundsCorner.y, upperBoundsCorner.z), // 5
+        glm::vec3(upperBoundsCorner.x, upperBoundsCorner.y, upperBoundsCorner.z), // 6
+        glm::vec3(lowerBoundsCorner.x, upperBoundsCorner.y, upperBoundsCorner.z)  // 7
+    };
+
+    float width = abs(upperBoundsCorner.x - lowerBoundsCorner.x);
+    float height = abs(upperBoundsCorner.y - lowerBoundsCorner.y);
+    float depth = abs(upperBoundsCorner.z - lowerBoundsCorner.z);
+
+    float longestSide = width;
+    if (height > longestSide) {
+        longestSide = height;
+    }
+    if (depth > longestSide) {
+        longestSide = depth;
+    }
+
+    float newMaxX = lowerBoundsCorner.x + longestSide;
+    float newMaxY = lowerBoundsCorner.y + longestSide;
+    float newMaxZ = lowerBoundsCorner.z + longestSide;
+
+    upperBoundsCorner = glm::vec3(newMaxX, newMaxY, newMaxZ);
 }
 
 void Mesh::render(glm::mat4 cameraInverse)
@@ -98,4 +118,84 @@ void Mesh::render(glm::mat4 cameraInverse)
 
     glDisableClientState(GL_VERTEX_ARRAY);
     glDisableClientState(GL_NORMAL_ARRAY);
+
+    renderBoundingBox();
+}
+
+void Mesh::renderBoundingBox()
+{
+    // Save current state
+    glPushAttrib(GL_ALL_ATTRIB_BITS);
+
+    // Disable lighting for bounding box
+    glDisable(GL_LIGHTING);
+
+    // Set line properties
+    glLineWidth(2.0f);
+    glColor3f(1.0f, 0.0f, 0.0f); // Red color for bounding box
+
+    // Get bounding box corners
+    glm::vec3 min = lowerBoundsCorner;
+    glm::vec3 max = upperBoundsCorner;
+
+    // Define the 8 corners of the bounding box
+    glm::vec3 corners[8] = {
+        glm::vec3(min.x, min.y, min.z), // 0
+        glm::vec3(max.x, min.y, min.z), // 1
+        glm::vec3(max.x, max.y, min.z), // 2
+        glm::vec3(min.x, max.y, min.z), // 3
+        glm::vec3(min.x, min.y, max.z), // 4
+        glm::vec3(max.x, min.y, max.z), // 5
+        glm::vec3(max.x, max.y, max.z), // 6
+        glm::vec3(min.x, max.y, max.z)  // 7
+    };
+
+    // Define the 12 edges of the bounding box (pairs of corner indices)
+    int edges[12][2] = {
+        {0, 1}, {1, 2}, {2, 3}, {3, 0}, // Bottom face
+        {4, 5}, {5, 6}, {6, 7}, {7, 4}, // Top face
+        {0, 4}, {1, 5}, {2, 6}, {3, 7}  // Vertical edges
+    };
+
+    // Draw the bounding box lines
+    glBegin(GL_LINES);
+    for (int i = 0; i < 12; i++) {
+        glVertex3f(corners[edges[i][0]].x, corners[edges[i][0]].y, corners[edges[i][0]].z);
+        glVertex3f(corners[edges[i][1]].x, corners[edges[i][1]].y, corners[edges[i][1]].z);
+    }
+    glEnd();
+
+    // Optionally draw corner points for better visibility
+    glPointSize(4.0f);
+    glColor3f(0.0f, 1.0f, 0.0f); // Green for points
+    glBegin(GL_POINTS);
+    for (int i = 0; i < 8; i++) {
+        glVertex3f(corners[i].x, corners[i].y, corners[i].z);
+    }
+    glEnd();
+
+    // Add small coordinate axes at the center of the bounding box for orientation
+    glm::vec3 center = (min + max) * 0.5f;
+    float size = glm::length(max - min) * 0.2f;
+
+    glLineWidth(1.0f);
+    glBegin(GL_LINES);
+    // X axis (red)
+    glColor3f(1.0f, 0.0f, 0.0f);
+    glVertex3f(center.x - size, center.y, center.z);
+    glVertex3f(center.x + size, center.y, center.z);
+
+    // Y axis (green)
+    glColor3f(0.0f, 1.0f, 0.0f);
+    glVertex3f(center.x, center.y - size, center.z);
+    glVertex3f(center.x, center.y + size, center.z);
+
+    // Z axis (blue)
+    glColor3f(0.0f, 0.0f, 1.0f);
+    glVertex3f(center.x, center.y, center.z - size);
+    glVertex3f(center.x, center.y, center.z + size);
+    glEnd();
+
+    // Restore previous state
+    glPopAttrib();
 }
