@@ -51,4 +51,6 @@ private:
 
     glm::vec3 lowerBoundsCorner;
     glm::vec3 upperBoundsCorner;
+
+    void renderBoundingBox();
 };
