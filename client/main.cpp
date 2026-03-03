@@ -17,6 +17,15 @@
 #include <glm/gtc/type_ptr.hpp>
 #include <glm/gtc/quaternion.hpp>
 
+
+#if defined(_WIN32)
+const std::string modelPath = "models/";
+#elif defined(__linux__)
+const std::string modelPath = "client/models/";
+#else
+const std::string modelPath = "client/models/";
+#endif
+
 void moveCameraEvent(int nodeId, float deltaTime, glm::mat4 nodeTransform);
 void cameraLeftEvent(int nodeId, bool keyDown, glm::mat4 nodeTransform);
 void cameraRightEvent(int nodeId, bool keyDown, glm::mat4 nodeTransform);
@@ -69,7 +78,7 @@ int main(int argc, char *argv[])
 	glm::mat4 lightPos = glm::translate(glm::mat4(1.0f), glm::vec3(5.0f, 5.0f, 5.0f));
 	eng.setNodeTransform(lightId, lightPos);
 
-	eng.addNodeFromFile("models/mercedes.glb");
+	eng.addNodeFromFile(modelPath+"/mercedes.glb");
 
 	eng.bindSceneEvent(3, moveCameraEvent);
 	eng.bindSceneEvent('w', 3, cameraUpEvent);
