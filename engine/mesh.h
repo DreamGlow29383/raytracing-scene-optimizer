@@ -45,6 +45,10 @@ private:
     std::vector<Vertex> m_vertices;
     std::vector<unsigned int> m_indices;
 
+    unsigned int vertexVBO = 0;
+    unsigned int indexVBO = 0;
+    unsigned int normalVBO = 0;
+
     glm::vec3 lowerBoundsCorner;
     glm::vec3 upperBoundsCorner;
 };

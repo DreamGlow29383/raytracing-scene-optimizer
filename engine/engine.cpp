@@ -12,7 +12,8 @@
 #include <source_location>
 #include <FreeImage.h>
 
-#include "GL/freeglut.h"
+#include <GL/glew.h>
+#include <GL/freeglut.h>
 
 struct Eng::Base::Reserved
 {
@@ -76,6 +77,8 @@ bool ENG_API Eng::Base::init(int argc, char* argv[])
     glutSetOption(GLUT_ACTION_ON_WINDOW_CLOSE, GLUT_ACTION_GLUTMAINLOOP_RETURNS);
 
     windowId = glutCreateWindow("Hanoi Tower - Group 12");
+
+    glewInit();
 
     glutDisplayFunc(displayCallback);
     glutReshapeFunc(reshapeCallback);

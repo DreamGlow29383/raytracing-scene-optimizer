@@ -1,5 +1,8 @@
 #include "scene.h"
 
+#include <GL/glew.h>
+#include <GL/freeglut.h>
+
 #include "light.h"
 #include "mesh.h"
 
