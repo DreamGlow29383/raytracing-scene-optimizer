@@ -6,7 +6,7 @@
 #include <glm/gtc/type_ptr.hpp>
 #include <iostream>
 
-Camera::Camera() : Node(),  _projectionMatrix(glm::mat4(1.0f))
+Camera::Camera() : Node(),  _projectionMatrix(glm::mat4(1.0f)), _aspect(16.0f / 9.0f)
 {
 	
 }
