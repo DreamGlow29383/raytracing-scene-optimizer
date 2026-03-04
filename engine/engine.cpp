@@ -261,12 +261,11 @@ int ENG_API Eng::Base::addNodeCamera(Eng::CameraConfig config) {
 
 int ENG_API Eng::Base::addNodeFromFile(int parent, const std::string& filepath) {
     std::vector<Vertex> outVertices;
-    std::vector<unsigned int> outIndices;
-    bool success = importFile(filepath, outVertices, outIndices);
+    std::vector<Face> outFaces;
+    bool success = importFile(filepath, outVertices, outFaces);
 
     if (success) {
-        Mesh* mesh = new Mesh();
-        mesh->setVertices(outVertices, outIndices);
+        Mesh* mesh = new Mesh(outFaces, outVertices);
         mesh->setName("Mesh");
         std::cout << "[+] Mesh Loaded: " << mesh->getName() << std::endl;
         addNodeTo(getCurrentScene()->getNode(parent), mesh);

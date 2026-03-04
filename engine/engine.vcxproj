@@ -84,6 +84,7 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="face.cpp" />
     <ClCompile Include="frame_event.cpp" />
     <ClCompile Include="callback.cpp" />
     <ClCompile Include="camera.cpp" />
@@ -100,6 +101,7 @@
     <ClCompile Include="scene.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="face.h" />
     <ClInclude Include="frame_event.h" />
     <ClInclude Include="callback.h" />
     <ClInclude Include="camera.h" />

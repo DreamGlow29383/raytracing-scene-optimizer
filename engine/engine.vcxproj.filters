@@ -31,6 +31,12 @@
     <Filter Include="Header Files\scene">
       <UniqueIdentifier>{0c6cd141-ac36-4fa7-9636-2a27b0e964ae}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Source Files\geometry">
+      <UniqueIdentifier>{0ccc1486-9100-46ca-9606-a535165d9252}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\geometry">
+      <UniqueIdentifier>{f1203eab-23ef-4ef5-84de-f5f642f1621f}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="engine.cpp">
@@ -66,6 +72,9 @@
     <ClCompile Include="camera.cpp">
       <Filter>Source Files\scene</Filter>
     </ClCompile>
+    <ClCompile Include="face.cpp">
+      <Filter>Source Files\geometry</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="engine.h">
@@ -100,6 +109,9 @@
     </ClInclude>
     <ClInclude Include="camera.h">
       <Filter>Header Files\scene</Filter>
+    </ClInclude>
+    <ClInclude Include="face.h">
+      <Filter>Header Files\geometry</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

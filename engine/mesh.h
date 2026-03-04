@@ -6,18 +6,8 @@
 #pragma once
 
 #include "node.h"
+#include "face.h"
 #include <string>
-
-/**
- * @struct Vertex
- * @brief Represents a single vertex with position, normal, and texture coordinates.
- */
-struct Vertex
-{
-	float x, y, z;
-	float nx, ny, nz;
-	float u, v;
-};
 
 /**
  * @class Mesh
@@ -25,15 +15,8 @@ struct Vertex
  */
 class Mesh : public Node {
 public:
-    Mesh();
+    Mesh(std::vector<Face> faces, std::vector<Vertex> vertices);
     virtual ~Mesh();
-
-    /**
-     * @brief Sets the geometry data for the mesh.
-     * @param vertices List of vertices containing position, normal, and UV.
-     * @param indices List of indices defining the triangles.
-     */
-    void setVertices(const std::vector<Vertex>& vertices, const std::vector<unsigned int>& indices);
 
     /**
      * @brief Renders the mesh with its material.
@@ -42,8 +25,8 @@ public:
     void render(glm::mat4 cameraInverse) override;
 
 private:
-    std::vector<Vertex> m_vertices;
-    std::vector<unsigned int> m_indices;
+    std::vector<Vertex> _vertices;
+    std::vector<Face> _faces;
 
     unsigned int vertexVBO = 0;
     unsigned int indexVBO = 0;

@@ -5,10 +5,12 @@
 #include <assimp/scene.h>
 #include <assimp/postprocess.h>
 
+#include "face.h"
+
 #include <iostream>
 #include <vector>
 
-bool importFile(const std::string& filepath, std::vector<Vertex>& outVertices, std::vector<unsigned int>& outIndices)
+bool importFile(const std::string& filepath, std::vector<Vertex>& outVertices, std::vector<Face>& outFaces)
 {
     Assimp::Importer importer;
 
@@ -24,10 +26,10 @@ bool importFile(const std::string& filepath, std::vector<Vertex>& outVertices, s
         return false;
     }
 
-    for (unsigned int i = 0; i < scene->mNumMeshes; i++)
+    for (unsigned int i = 0; i == 0 /*< scene->mNumMeshes*/; i++)
     {
         const aiMesh* ai_mesh = scene->mMeshes[i];
-        unsigned int indexOffset = static_cast<unsigned int>(outVertices.size());
+        //unsigned int indexOffset = static_cast<unsigned int>(outVertices.size());
 
         for (unsigned int j = 0; j < ai_mesh->mNumVertices; j++)
         {
@@ -58,9 +60,16 @@ bool importFile(const std::string& filepath, std::vector<Vertex>& outVertices, s
 
         for (unsigned int j = 0; j < ai_mesh->mNumFaces; j++)
         {
-            const aiFace& face = ai_mesh->mFaces[j];
-            for (unsigned int k = 0; k < face.mNumIndices; k++)
-                outIndices.push_back(indexOffset + face.mIndices[k]);
+            const aiFace& ai_face = ai_mesh->mFaces[j];
+
+            Face face;
+            std::vector<unsigned int> indices;
+
+            for (unsigned int k = 0; k < ai_face.mNumIndices; k++)
+                indices.push_back(ai_face.mIndices[k]);
+            face._indices = indices;
+
+            outFaces.push_back(face);
         }
     }
 

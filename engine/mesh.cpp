@@ -6,52 +6,50 @@
 #include <GL/glew.h>
 #include <GL/freeglut.h>
 
-Mesh::Mesh()
+Mesh::Mesh(std::vector<Face> faces, std::vector<Vertex> vertices)
 {
     Mesh::Node();
-}
 
-Mesh::~Mesh()
-{
+    _faces = faces;
+    _vertices = vertices;
 
-}
+    std::vector<unsigned int> _indices;
+    for (Face face : faces) {
+        for (unsigned int index : face._indices)
+            _indices.push_back(index);
+    }
 
-void Mesh::setVertices(const std::vector<Vertex>& vertices, const std::vector<unsigned int>& indices)
-{
-    m_vertices = vertices;
-    m_indices = indices;
+    float* flatVertices = new float[_vertices.size() * 3];
+    float* flatNormals = new float[_vertices.size() * 3];
+    for (int i = 0; i < _vertices.size(); i++) {
+        flatVertices[i * 3] = _vertices[i].x;
+        flatVertices[i * 3 + 1] = _vertices[i].y;
+        flatVertices[i * 3 + 2] = _vertices[i].z;
 
-    float* flatVertices = new float[m_vertices.size() * 3];
-    float* flatNormals = new float[m_vertices.size() * 3];
-    for (int i = 0; i < m_vertices.size(); i++) {
-        flatVertices[i * 3] = m_vertices[i].x;
-        flatVertices[i * 3 + 1] = m_vertices[i].y;
-        flatVertices[i * 3 + 2] = m_vertices[i].z;
-
-        flatNormals[i * 3] = m_vertices[i].nx;
-        flatNormals[i * 3 + 1] = m_vertices[i].ny;
-        flatNormals[i * 3 + 2] = m_vertices[i].nz;
+        flatNormals[i * 3] = _vertices[i].nx;
+        flatNormals[i * 3 + 1] = _vertices[i].ny;
+        flatNormals[i * 3 + 2] = _vertices[i].nz;
     }
 
     glGenBuffers(1, &vertexVBO);
     glBindBuffer(GL_ARRAY_BUFFER, vertexVBO);
-    glBufferData(GL_ARRAY_BUFFER, m_vertices.size() * 3 * sizeof(float), flatVertices, GL_STATIC_DRAW);
+    glBufferData(GL_ARRAY_BUFFER, _vertices.size() * 3 * sizeof(float), flatVertices, GL_STATIC_DRAW);
 
     glGenBuffers(1, &indexVBO);
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, indexVBO);
-    glBufferData(GL_ELEMENT_ARRAY_BUFFER, m_indices.size() * sizeof(unsigned int), m_indices.data(), GL_STATIC_DRAW);
+    glBufferData(GL_ELEMENT_ARRAY_BUFFER, _indices.size() * sizeof(unsigned int), _indices.data(), GL_STATIC_DRAW);
 
     glGenBuffers(1, &normalVBO);
     glBindBuffer(GL_ARRAY_BUFFER, normalVBO);
-    glBufferData(GL_ARRAY_BUFFER, m_vertices.size() * 3 * sizeof(float), flatNormals, GL_STATIC_DRAW);
+    glBufferData(GL_ARRAY_BUFFER, _vertices.size() * 3 * sizeof(float), flatNormals, GL_STATIC_DRAW);
 
     delete[] flatVertices;
     delete[] flatNormals;
 
-    glm::vec3 lowerCorner = glm::vec3(m_vertices[0].x, m_vertices[0].y, m_vertices[0].z);
-    glm::vec3 upperCorner = glm::vec3(m_vertices[0].x, m_vertices[0].y, m_vertices[0].z);
+    glm::vec3 lowerCorner = glm::vec3(_vertices[0].x, _vertices[0].y, _vertices[0].z);
+    glm::vec3 upperCorner = glm::vec3(_vertices[0].x, _vertices[0].y, _vertices[0].z);
 
-    for (Vertex v : m_vertices) {
+    for (Vertex v : _vertices) {
         if (v.x < lowerCorner.x)
             lowerCorner.x = v.x;
         if (v.y < lowerCorner.y)
@@ -100,6 +98,11 @@ void Mesh::setVertices(const std::vector<Vertex>& vertices, const std::vector<un
     upperBoundsCorner = glm::vec3(newMaxX, newMaxY, newMaxZ);
 }
 
+Mesh::~Mesh()
+{
+
+}
+
 void Mesh::render(glm::mat4 cameraInverse)
 {
     glMatrixMode(GL_MODELVIEW);
@@ -114,7 +117,7 @@ void Mesh::render(glm::mat4 cameraInverse)
     glEnableClientState(GL_NORMAL_ARRAY);
 
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, indexVBO);
-    glDrawElements(GL_TRIANGLES, m_indices.size(), GL_UNSIGNED_INT, nullptr);
+    glDrawElements(GL_TRIANGLES, _faces.size() * 3, GL_UNSIGNED_INT, nullptr);
 
     glDisableClientState(GL_VERTEX_ARRAY);
     glDisableClientState(GL_NORMAL_ARRAY);
