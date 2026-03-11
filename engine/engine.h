@@ -285,6 +285,13 @@ public:
      */
     int getWindowId();
 
+    std::vector<Face> getOutFaces() {
+        return outFaces;
+    }
+    std::vector<Vertex> getOutVertices() {
+        return outVertices;
+    }
+
 private:
     struct Reserved;
     std::unique_ptr<Reserved> reserved;
@@ -293,6 +300,9 @@ private:
     int nextSceneId = 0;
     int currentSceneId = -1;
     int windowId;
+
+    std::vector<Vertex> outVertices;
+    std::vector<Face> outFaces;
 
     void addNode(Node* node);
     void addNodeTo(Node* parent, Node* node);

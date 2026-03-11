@@ -8,6 +8,7 @@
  */
 
 #include "engine.h"
+#include "octreeNode.h"
 #include <iostream>
 #include <map>
 #include <algorithm>
@@ -92,6 +93,16 @@ int main(int argc, char *argv[])
 
 	std::cout << "\n[application terminated]" << std::endl;
 	return 0;
+}
+
+void createOctree() {
+	Eng::Base &eng = Eng::Base::getInstance();
+	OctreeNode root(nullptr, eng.getOutVertices());
+	// todo
+}
+
+void showOctree() {
+
 }
 
 void moveCameraEvent(int nodeId, float deltaTime, glm::mat4 nodeTransform) {
