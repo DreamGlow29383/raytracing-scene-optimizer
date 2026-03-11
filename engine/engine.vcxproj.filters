@@ -37,6 +37,12 @@
     <Filter Include="Header Files\geometry">
       <UniqueIdentifier>{f1203eab-23ef-4ef5-84de-f5f642f1621f}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Source Files\octree">
+      <UniqueIdentifier>{71b73f2a-05ac-4e23-8691-9f32473eff4d}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\octree">
+      <UniqueIdentifier>{adc69d21-7ca0-4f39-b605-240b09a3249d}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="engine.cpp">
@@ -75,6 +81,9 @@
     <ClCompile Include="face.cpp">
       <Filter>Source Files\geometry</Filter>
     </ClCompile>
+    <ClCompile Include="octreeNode.cpp">
+      <Filter>Source Files\octree</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="engine.h">
@@ -112,6 +121,9 @@
     </ClInclude>
     <ClInclude Include="face.h">
       <Filter>Header Files\geometry</Filter>
+    </ClInclude>
+    <ClInclude Include="octreeNode.h">
+      <Filter>Header Files\octree</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

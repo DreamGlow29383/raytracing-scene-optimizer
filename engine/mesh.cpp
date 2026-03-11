@@ -2,11 +2,12 @@
 
 #include <iostream>
 #include <math.h>
+#include <algorithm>
 
 #include <GL/glew.h>
 #include <GL/freeglut.h>
 
-Mesh::Mesh(std::vector<Face> faces, std::vector<Vertex> vertices)
+Mesh::Mesh(std::vector<Face*> faces, std::vector<Vertex*> vertices)
 {
     Mesh::Node();
 
@@ -14,21 +15,21 @@ Mesh::Mesh(std::vector<Face> faces, std::vector<Vertex> vertices)
     _vertices = vertices;
 
     std::vector<unsigned int> _indices;
-    for (Face face : faces) {
-        for (unsigned int index : face._indices)
+    for (Face* face : faces) {
+        for (unsigned int index : face->_indices)
             _indices.push_back(index);
     }
 
     float* flatVertices = new float[_vertices.size() * 3];
     float* flatNormals = new float[_vertices.size() * 3];
     for (int i = 0; i < _vertices.size(); i++) {
-        flatVertices[i * 3] = _vertices[i].x;
-        flatVertices[i * 3 + 1] = _vertices[i].y;
-        flatVertices[i * 3 + 2] = _vertices[i].z;
+        flatVertices[i * 3] = _vertices[i]->x;
+        flatVertices[i * 3 + 1] = _vertices[i]->y;
+        flatVertices[i * 3 + 2] = _vertices[i]->z;
 
-        flatNormals[i * 3] = _vertices[i].nx;
-        flatNormals[i * 3 + 1] = _vertices[i].ny;
-        flatNormals[i * 3 + 2] = _vertices[i].nz;
+        flatNormals[i * 3] = _vertices[i]->nx;
+        flatNormals[i * 3 + 1] = _vertices[i]->ny;
+        flatNormals[i * 3 + 2] = _vertices[i]->nz;
     }
 
     glGenBuffers(1, &vertexVBO);
@@ -46,23 +47,23 @@ Mesh::Mesh(std::vector<Face> faces, std::vector<Vertex> vertices)
     delete[] flatVertices;
     delete[] flatNormals;
 
-    glm::vec3 lowerCorner = glm::vec3(_vertices[0].x, _vertices[0].y, _vertices[0].z);
-    glm::vec3 upperCorner = glm::vec3(_vertices[0].x, _vertices[0].y, _vertices[0].z);
+    glm::vec3 lowerCorner = glm::vec3(_vertices[0]->x, _vertices[0]->y, _vertices[0]->z);
+    glm::vec3 upperCorner = glm::vec3(_vertices[0]->x, _vertices[0]->y, _vertices[0]->z);
 
-    for (Vertex v : _vertices) {
-        if (v.x < lowerCorner.x)
-            lowerCorner.x = v.x;
-        if (v.y < lowerCorner.y)
-            lowerCorner.y = v.y;
-        if (v.z < lowerCorner.z)
-            lowerCorner.z = v.z;
+    for (Vertex* v : _vertices) {
+        if (v->x < lowerCorner.x)
+            lowerCorner.x = v->x;
+        if (v->y < lowerCorner.y)
+            lowerCorner.y = v->y;
+        if (v->z < lowerCorner.z)
+            lowerCorner.z = v->z;
 
-        if (v.x > upperCorner.x)
-            upperCorner.x = v.x;
-        if (v.y > upperCorner.y)
-            upperCorner.y = v.y;
-        if (v.z > upperCorner.z)
-            upperCorner.z = v.z;
+        if (v->x > upperCorner.x)
+            upperCorner.x = v->x;
+        if (v->y > upperCorner.y)
+            upperCorner.y = v->y;
+        if (v->z > upperCorner.z)
+            upperCorner.z = v->z;
     }
 
     lowerBoundsCorner = lowerCorner;
@@ -96,6 +97,8 @@ Mesh::Mesh(std::vector<Face> faces, std::vector<Vertex> vertices)
     float newMaxZ = lowerBoundsCorner.z + longestSide;
 
     upperBoundsCorner = glm::vec3(newMaxX, newMaxY, newMaxZ);
+
+    rootNode = new OctreeNode(_vertices, _faces);
 }
 
 Mesh::~Mesh()

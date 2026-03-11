@@ -16,4 +16,5 @@ struct Vertex
 struct Face
 {
 	std::vector<unsigned int> _indices;
+	std::vector<Vertex*> _vertices;
 };

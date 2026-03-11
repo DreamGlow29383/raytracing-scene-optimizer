@@ -7,6 +7,7 @@
 
 #include "node.h"
 #include "face.h"
+#include "octreeNode.h"
 #include <string>
 
 /**
@@ -15,7 +16,7 @@
  */
 class Mesh : public Node {
 public:
-    Mesh(std::vector<Face> faces, std::vector<Vertex> vertices);
+    Mesh(std::vector<Face*> faces, std::vector<Vertex*> vertices);
     virtual ~Mesh();
 
     /**
@@ -25,8 +26,8 @@ public:
     void render(glm::mat4 cameraInverse) override;
 
 private:
-    std::vector<Vertex> _vertices;
-    std::vector<Face> _faces;
+    std::vector<Vertex*> _vertices;
+    std::vector<Face*> _faces;
 
     unsigned int vertexVBO = 0;
     unsigned int indexVBO = 0;
@@ -34,6 +35,8 @@ private:
 
     glm::vec3 lowerBoundsCorner;
     glm::vec3 upperBoundsCorner;
+
+    OctreeNode* rootNode;
 
     void renderBoundingBox();
 };

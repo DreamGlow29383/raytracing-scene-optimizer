@@ -1,23 +1,12 @@
 #include "octreeNode.h"
+#include <utility>
 
-OctreeNode::OctreeNode(std::vector<unsigned int>* bounding_box_corners, std::vector<Vertex*> allVertices) {
+OctreeNode::OctreeNode(std::vector<Vertex*> allVertices, std::vector<Face*> allFaces) {
 
-    this->allVertices = allVertices;
+    glm::vec3 lowerCorner = glm::vec3(allVertices[0]->x, allVertices[0]->y, allVertices[0]->z);
+    glm::vec3 upperCorner = glm::vec3(allVertices[0]->x, allVertices[0]->y, allVertices[0]->z);
 
-       glm::vec3 lowerCorner = glm::vec3(
-        allVertices[(*bounding_box_corners)[0]]->x,
-        allVertices[(*bounding_box_corners)[0]]->y,
-        allVertices[(*bounding_box_corners)[0]]->z
-    );
-
-    glm::vec3 upperCorner = glm::vec3(
-        allVertices[(*bounding_box_corners)[0]]->x,
-        allVertices[(*bounding_box_corners)[0]]->y,
-        allVertices[(*bounding_box_corners)[0]]->z
-    );
-
-    for (unsigned int i : *bounding_box_corners) {
-        Vertex* v = allVertices[i];
+    for (Vertex* v : allVertices) {
         if (v->x < lowerCorner.x)
             lowerCorner.x = v->x;
         if (v->y < lowerCorner.y)
@@ -51,6 +40,14 @@ OctreeNode::OctreeNode(std::vector<unsigned int>* bounding_box_corners, std::vec
     for (int i = 0; i < 8; i++) {
         m_bounding_box_corners.push_back(corners[i]);
     }
+
+    for (Face* face : allFaces)
+        insert(face);
+}
+
+OctreeNode::OctreeNode(glm::vec3 lowerCorner, glm::vec3 upperCorner) {
+    lowerBoundsCorner = lowerCorner;
+    upperBoundsCorner = upperCorner;
 }
 
 OctreeNode::~OctreeNode() {}
@@ -64,6 +61,26 @@ void OctreeNode::split() {
     float midY = (lowerBoundsCorner.y + upperBoundsCorner.y) / 2.0f;
     float midZ = (lowerBoundsCorner.z + upperBoundsCorner.z) / 2.0f;
     
+    float sideLength = abs(lowerBoundsCorner.x - upperBoundsCorner.x);
+
+    std::vector<std::pair<glm::vec3, glm::vec3>> childCorners;
+
+    for (int zdiff = 0; zdiff < 2; zdiff++) {
+        for (int ydiff = 0; ydiff < 2; ydiff++) {
+            for (int xdiff = 0; xdiff < 2; xdiff++) {
+                glm::vec3 corner1 = glm::vec3(
+                    lowerBoundsCorner.x + (sideLength * xdiff),
+                    lowerBoundsCorner.y + (sideLength * ydiff),
+                    lowerBoundsCorner.z + (sideLength * zdiff)
+                );
+                glm::vec3 corner2 = glm::vec3(corner1.x + sideLength, corner1.y + sideLength, corner1.z + sideLength);
+
+                childCorners.push_back({ corner1, corner2 });
+            }
+        }
+    }
+
+    /*
     std::vector<glm::vec3> childCorners[8];
     
     // Child 0: (-x, -y, -z) - bottom-left-front
@@ -160,13 +177,14 @@ void OctreeNode::split() {
         glm::vec3(midX, upperBoundsCorner.y, upperBoundsCorner.z),
         glm::vec3(lowerBoundsCorner.x, upperBoundsCorner.y, upperBoundsCorner.z)
     };
-    
-    for (int i = 0; i < 8; i++) {
-        children[i] = new OctreeNode(&childCorners[i], allVertices);
+    */
+
+    for (int i = 0; i < childCorners.size(); i++) {
+        children.push_back(new OctreeNode(childCorners[i].first, childCorners[i].second));
     }
     
     for (Face* face : faces) {
-        for (int i = 0; i < 8; i++) {
+        for (int i = 0; i < children.size(); i++) {
             if (children[i]->check(face)) {
                 children[i]->insert(face);
             }
@@ -187,15 +205,15 @@ void OctreeNode::insert(Face* face) {
                 this->children[i]->insert(face);
             }
         }
-        
     }
-    this->faces.push_back(face);
+    else {
+        this->faces.push_back(face);
+    }
 }
 
 bool OctreeNode::check(const Face* face) {
-    for (const int& i: face->_indices)
+    for (Vertex* v: face->_vertices)
     {
-        Vertex *v = allVertices.at(i); // 1 of 3 inside the box is enough
         if (v->x >= lowerBoundsCorner.x && v->y >= lowerBoundsCorner.y && v->z >= lowerBoundsCorner.z
         && v->x <= upperBoundsCorner.x && v->y <= upperBoundsCorner.y && v->z <= upperBoundsCorner.z) {
             return true;

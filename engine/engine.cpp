@@ -260,6 +260,9 @@ int ENG_API Eng::Base::addNodeCamera(Eng::CameraConfig config) {
 }
 
 int ENG_API Eng::Base::addNodeFromFile(int parent, const std::string& filepath) {
+    std::vector<Vertex*> outVertices;
+    std::vector<Face*> outFaces;
+
     bool success = importFile(filepath, outVertices, outFaces);
 
     if (success) {

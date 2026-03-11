@@ -3,12 +3,12 @@
 #include "engine.h"
 #include "face.h"
 
-int max_faces = 10;
+static int max_faces = 10;
 
 class OctreeNode {
 public:
-
-    OctreeNode(std::vector<unsigned int>* m_bounding_box_corners, std::vector<Vertex*> allVertices);
+    OctreeNode(std::vector<Vertex*> allVertices, std::vector<Face*> allFaces);
+    OctreeNode(glm::vec3 lowerCorner, glm::vec3 upperCorner);
     ~OctreeNode();
 
     void insert(Face* face);
@@ -23,9 +23,6 @@ private:
     void split();
     bool m_isSplit = false;
     std::vector<Face*> faces;
-
-    // reference to all vertices
-    std::vector<Vertex*> allVertices;
 
     /* bounding box defined left to right, front to back, bottom to top
        7------------6
