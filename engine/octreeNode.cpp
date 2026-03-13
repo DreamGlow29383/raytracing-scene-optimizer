@@ -25,29 +25,32 @@ OctreeNode::OctreeNode(std::vector<Vertex*> allVertices, std::vector<Face*> allF
     lowerBoundsCorner = lowerCorner;
     upperBoundsCorner = upperCorner;
 
-    glm::vec3 corners[8] = {
-        glm::vec3(lowerBoundsCorner.x, lowerBoundsCorner.y, lowerBoundsCorner.z), // 0
-        glm::vec3(upperBoundsCorner.x, lowerBoundsCorner.y, lowerBoundsCorner.z), // 1
-        glm::vec3(upperBoundsCorner.x, upperBoundsCorner.y, lowerBoundsCorner.z), // 2
-        glm::vec3(lowerBoundsCorner.x, upperBoundsCorner.y, lowerBoundsCorner.z), // 3
-        glm::vec3(lowerBoundsCorner.x, lowerBoundsCorner.y, upperBoundsCorner.z), // 4
-        glm::vec3(upperBoundsCorner.x, lowerBoundsCorner.y, upperBoundsCorner.z), // 5
-        glm::vec3(upperBoundsCorner.x, upperBoundsCorner.y, upperBoundsCorner.z), // 6
-        glm::vec3(lowerBoundsCorner.x, upperBoundsCorner.y, upperBoundsCorner.z)  // 7
-    };
+    float width = abs(upperBoundsCorner.x - lowerBoundsCorner.x);
+    float height = abs(upperBoundsCorner.y - lowerBoundsCorner.y);
+    float depth = abs(upperBoundsCorner.z - lowerBoundsCorner.z);
 
-    
-    for (int i = 0; i < 8; i++) {
-        m_bounding_box_corners.push_back(corners[i]);
+    float longestSide = width;
+    if (height > longestSide) {
+        longestSide = height;
     }
+    if (depth > longestSide) {
+        longestSide = depth;
+    }
+
+    float newMaxX = lowerBoundsCorner.x + longestSide;
+    float newMaxY = lowerBoundsCorner.y + longestSide;
+    float newMaxZ = lowerBoundsCorner.z + longestSide;
+
+    upperBoundsCorner = glm::vec3(newMaxX, newMaxY, newMaxZ);
 
     for (Face* face : allFaces)
         insert(face);
 }
 
-OctreeNode::OctreeNode(glm::vec3 lowerCorner, glm::vec3 upperCorner) {
+OctreeNode::OctreeNode(glm::vec3 lowerCorner, glm::vec3 upperCorner, int depth) {
     lowerBoundsCorner = lowerCorner;
     upperBoundsCorner = upperCorner;
+    node_depth = depth;
 }
 
 OctreeNode::~OctreeNode() {}
@@ -61,7 +64,7 @@ void OctreeNode::split() {
     float midY = (lowerBoundsCorner.y + upperBoundsCorner.y) / 2.0f;
     float midZ = (lowerBoundsCorner.z + upperBoundsCorner.z) / 2.0f;
     
-    float sideLength = abs(lowerBoundsCorner.x - upperBoundsCorner.x);
+    float sideLength = abs(lowerBoundsCorner.x - upperBoundsCorner.x) / 2;
 
     std::vector<std::pair<glm::vec3, glm::vec3>> childCorners;
 
@@ -80,107 +83,8 @@ void OctreeNode::split() {
         }
     }
 
-    /*
-    std::vector<glm::vec3> childCorners[8];
-    
-    // Child 0: (-x, -y, -z) - bottom-left-front
-    childCorners[0] = {
-        glm::vec3(lowerBoundsCorner.x, lowerBoundsCorner.y, lowerBoundsCorner.z),
-        glm::vec3(midX, lowerBoundsCorner.y, lowerBoundsCorner.z),
-        glm::vec3(midX, midY, lowerBoundsCorner.z),
-        glm::vec3(lowerBoundsCorner.x, midY, lowerBoundsCorner.z),
-        glm::vec3(lowerBoundsCorner.x, lowerBoundsCorner.y, midZ),
-        glm::vec3(midX, lowerBoundsCorner.y, midZ),
-        glm::vec3(midX, midY, midZ),
-        glm::vec3(lowerBoundsCorner.x, midY, midZ)
-    };
-    // Child 1: (+x, -y, -z) - bottom-right-front
-    childCorners[1] = {
-        glm::vec3(midX, lowerBoundsCorner.y, lowerBoundsCorner.z),
-        glm::vec3(upperBoundsCorner.x, lowerBoundsCorner.y, lowerBoundsCorner.z),
-        glm::vec3(upperBoundsCorner.x, midY, lowerBoundsCorner.z),
-        glm::vec3(midX, midY, lowerBoundsCorner.z),
-        glm::vec3(midX, lowerBoundsCorner.y, midZ),
-        glm::vec3(upperBoundsCorner.x, lowerBoundsCorner.y, midZ),
-        glm::vec3(upperBoundsCorner.x, midY, midZ),
-        glm::vec3(midX, midY, midZ)
-    };
-    
-    // Child 2: (+x, +y, -z) - bottom-right-back
-    childCorners[2] = {
-        glm::vec3(midX, midY, lowerBoundsCorner.z),
-        glm::vec3(upperBoundsCorner.x, midY, lowerBoundsCorner.z),
-        glm::vec3(upperBoundsCorner.x, upperBoundsCorner.y, lowerBoundsCorner.z),
-        glm::vec3(midX, upperBoundsCorner.y, lowerBoundsCorner.z),
-        glm::vec3(midX, midY, midZ),
-        glm::vec3(upperBoundsCorner.x, midY, midZ),
-        glm::vec3(upperBoundsCorner.x, upperBoundsCorner.y, midZ),
-        glm::vec3(midX, upperBoundsCorner.y, midZ)
-    };
-    
-    // Child 3: (-x, +y, -z) - bottom-left-back
-    childCorners[3] = {
-        glm::vec3(lowerBoundsCorner.x, midY, lowerBoundsCorner.z),
-        glm::vec3(midX, midY, lowerBoundsCorner.z),
-        glm::vec3(midX, upperBoundsCorner.y, lowerBoundsCorner.z),
-        glm::vec3(lowerBoundsCorner.x, upperBoundsCorner.y, lowerBoundsCorner.z),
-        glm::vec3(lowerBoundsCorner.x, midY, midZ),
-        glm::vec3(midX, midY, midZ),
-        glm::vec3(midX, upperBoundsCorner.y, midZ),
-        glm::vec3(lowerBoundsCorner.x, upperBoundsCorner.y, midZ)
-    };
-    
-    // Child 4: (-x, -y, +z) - top-left-front
-    childCorners[4] = {
-        glm::vec3(lowerBoundsCorner.x, lowerBoundsCorner.y, midZ),
-        glm::vec3(midX, lowerBoundsCorner.y, midZ),
-        glm::vec3(midX, midY, midZ),
-        glm::vec3(lowerBoundsCorner.x, midY, midZ),
-        glm::vec3(lowerBoundsCorner.x, lowerBoundsCorner.y, upperBoundsCorner.z),
-        glm::vec3(midX, lowerBoundsCorner.y, upperBoundsCorner.z),
-        glm::vec3(midX, midY, upperBoundsCorner.z),
-        glm::vec3(lowerBoundsCorner.x, midY, upperBoundsCorner.z)
-    };
-    
-    // Child 5: (+x, -y, +z) - top-right-front
-    childCorners[5] = {
-        glm::vec3(midX, lowerBoundsCorner.y, midZ),
-        glm::vec3(upperBoundsCorner.x, lowerBoundsCorner.y, midZ),
-        glm::vec3(upperBoundsCorner.x, midY, midZ),
-        glm::vec3(midX, midY, midZ),
-        glm::vec3(midX, lowerBoundsCorner.y, upperBoundsCorner.z),
-        glm::vec3(upperBoundsCorner.x, lowerBoundsCorner.y, upperBoundsCorner.z),
-        glm::vec3(upperBoundsCorner.x, midY, upperBoundsCorner.z),
-        glm::vec3(midX, midY, upperBoundsCorner.z)
-    };
-    
-    // Child 6: (+x, +y, +z) - top-right-back
-    childCorners[6] = {
-        glm::vec3(midX, midY, midZ),
-        glm::vec3(upperBoundsCorner.x, midY, midZ),
-        glm::vec3(upperBoundsCorner.x, upperBoundsCorner.y, midZ),
-        glm::vec3(midX, upperBoundsCorner.y, midZ),
-        glm::vec3(midX, midY, upperBoundsCorner.z),
-        glm::vec3(upperBoundsCorner.x, midY, upperBoundsCorner.z),
-        glm::vec3(upperBoundsCorner.x, upperBoundsCorner.y, upperBoundsCorner.z),
-        glm::vec3(midX, upperBoundsCorner.y, upperBoundsCorner.z)
-    };
-    
-    // Child 7: (-x, +y, +z) - top-left-back
-    childCorners[7] = {
-        glm::vec3(lowerBoundsCorner.x, midY, midZ),
-        glm::vec3(midX, midY, midZ),
-        glm::vec3(midX, upperBoundsCorner.y, midZ),
-        glm::vec3(lowerBoundsCorner.x, upperBoundsCorner.y, midZ),
-        glm::vec3(lowerBoundsCorner.x, midY, upperBoundsCorner.z),
-        glm::vec3(midX, midY, upperBoundsCorner.z),
-        glm::vec3(midX, upperBoundsCorner.y, upperBoundsCorner.z),
-        glm::vec3(lowerBoundsCorner.x, upperBoundsCorner.y, upperBoundsCorner.z)
-    };
-    */
-
     for (int i = 0; i < childCorners.size(); i++) {
-        children.push_back(new OctreeNode(childCorners[i].first, childCorners[i].second));
+        children.push_back(new OctreeNode(childCorners[i].first, childCorners[i].second, node_depth + 1));
     }
     
     for (Face* face : faces) {
@@ -196,15 +100,16 @@ void OctreeNode::split() {
 }
 
 void OctreeNode::insert(Face* face) {
-    if (this->faces.size() >= max_faces) {
+    if (m_isSplit) {
+        for (OctreeNode* child : children)
+            if (child->check(face))
+                child->insert(face);
+    }
+    else if (this->faces.size() >= max_faces && node_depth < max_depth) {
         split();
-
-        for (int i = 0; i < 8; i++)
-        {
-            if (this->children[i]->check(face)) {
-                this->children[i]->insert(face);
-            }
-        }
+        for (OctreeNode* child : children)
+            if (child->check(face))
+                child->insert(face);
     }
     else {
         this->faces.push_back(face);

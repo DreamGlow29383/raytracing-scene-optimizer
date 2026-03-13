@@ -92,6 +92,8 @@ bool ENG_API Eng::Base::init(int argc, char* argv[])
     glEnable(GL_CULL_FACE);
     glShadeModel(GL_SMOOTH);
 
+    //glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+
     std::cout << "[>] " << LIB_NAME << " initialized" << std::endl;
     reserved->initFlag = true;
 

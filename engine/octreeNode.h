@@ -4,11 +4,12 @@
 #include "face.h"
 
 static int max_faces = 10;
+static int max_depth = 10;
 
 class OctreeNode {
 public:
     OctreeNode(std::vector<Vertex*> allVertices, std::vector<Face*> allFaces);
-    OctreeNode(glm::vec3 lowerCorner, glm::vec3 upperCorner);
+    OctreeNode(glm::vec3 lowerCorner, glm::vec3 upperCorner, int depth);
     ~OctreeNode();
 
     void insert(Face* face);
@@ -18,22 +19,18 @@ public:
     bool isSplit();
     void render(glm::mat4 cameraInverse);
 
+    glm::vec3 getLowerBounds() const { return lowerBoundsCorner; }
+    glm::vec3 getUpperBounds() const { return upperBoundsCorner; }
+    std::vector<OctreeNode*> getChildren() const { return children; }
+    bool hasChildren() const { return !children.empty(); }
+    std::vector<Face*> getFaces() const { return faces; }
+    bool hasFaces() const { return !faces.empty(); }
+    int getDepth() const { return node_depth; }
 private:
 
     void split();
     bool m_isSplit = false;
     std::vector<Face*> faces;
-
-    /* bounding box defined left to right, front to back, bottom to top
-       7------------6
-      /            /|
-     /            / |
-    3------------2  |
-    |            |  |
-    |            |  5
-    |            | /
-    0____________1/       */
-   std::vector<glm::vec3> m_bounding_box_corners;
 
    /* children assigned in order left to right, front to back, bottom to top
        -------------
@@ -47,4 +44,5 @@ private:
     std::vector<OctreeNode*> children;
     glm::vec3 lowerBoundsCorner;
     glm::vec3 upperBoundsCorner;
+    int node_depth = 0;
 };
