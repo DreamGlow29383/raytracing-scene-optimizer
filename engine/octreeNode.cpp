@@ -119,8 +119,14 @@ void OctreeNode::insert(Face* face) {
 bool OctreeNode::check(const Face* face) {
     for (Vertex* v: face->_vertices)
     {
-        if (v->x >= lowerBoundsCorner.x && v->y >= lowerBoundsCorner.y && v->z >= lowerBoundsCorner.z
-        && v->x <= upperBoundsCorner.x && v->y <= upperBoundsCorner.y && v->z <= upperBoundsCorner.z) {
+        // small epsilon to avoid floating point errors
+        const float EPSILON = 0.0001f;
+        if (v->x >= lowerBoundsCorner.x - EPSILON && 
+            v->y >= lowerBoundsCorner.y - EPSILON && 
+            v->z >= lowerBoundsCorner.z - EPSILON &&
+            v->x <= upperBoundsCorner.x + EPSILON && 
+            v->y <= upperBoundsCorner.y + EPSILON && 
+            v->z <= upperBoundsCorner.z + EPSILON) {
             return true;
         }
     }
