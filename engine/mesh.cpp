@@ -1,4 +1,4 @@
-#include "mesh.h"
+﻿#include "mesh.h"
 
 #include <iostream>
 #include <math.h>
@@ -64,11 +64,13 @@ Mesh::Mesh(std::vector<Face*> faces, std::vector<Vertex*> vertices)
             glBufferData(GL_ELEMENT_ARRAY_BUFFER, indices.size() * sizeof(unsigned int), indices.data(), GL_STATIC_DRAW);
             nodeIndexVBOs[node] = vbo;
             nodeIndexCounts[node] = indices.size();
+            //nodeColors[node] = computeDensityColor(node->getFaces().size());
+            nodeColors[node] = computeDepthColor(node->getDepth());
         }
     }
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
 
-    //printOctreeHierarchy(rootNode, "", false, true);
+    printOctreeHierarchy(rootNode, "", false, true);
 }
 
 Mesh::~Mesh()
@@ -89,8 +91,12 @@ void Mesh::render(glm::mat4 cameraInverse)
     glNormalPointer(GL_FLOAT, 0, nullptr);
     glEnableClientState(GL_NORMAL_ARRAY);
 
+    // --- Pass 1: solid fill ---
     glDisable(GL_LIGHTING);
-    srand(42);
+    glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+    glEnable(GL_POLYGON_OFFSET_FILL);
+    glPolygonOffset(1.0f, 1.0f);
+
     std::vector<OctreeNode*> stack = { rootNode };
     while (!stack.empty()) {
         OctreeNode* node = stack.back();
@@ -100,11 +106,34 @@ void Mesh::render(glm::mat4 cameraInverse)
                 stack.push_back(child);
         }
         else if (node->hasFaces()) {
-            glColor3f((float)rand() / RAND_MAX, (float)rand() / RAND_MAX, (float)rand() / RAND_MAX);
+            glm::vec3& col = nodeColors[node];
+            glColor3f(col.r, col.g, col.b);
             glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, nodeIndexVBOs[node]);
             glDrawElements(GL_TRIANGLES, nodeIndexCounts[node], GL_UNSIGNED_INT, nullptr);
         }
     }
+    glDisable(GL_POLYGON_OFFSET_FILL);
+
+    // --- Pass 2: edges only ---
+    glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+    glLineWidth(1.0f);
+    glColor3f(0.0f, 0.0f, 0.0f);
+
+    stack = { rootNode };
+    while (!stack.empty()) {
+        OctreeNode* node = stack.back();
+        stack.pop_back();
+        if (node->hasChildren()) {
+            for (OctreeNode* child : node->getChildren())
+                stack.push_back(child);
+        }
+        else if (node->hasFaces()) {
+            glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, nodeIndexVBOs[node]);
+            glDrawElements(GL_TRIANGLES, nodeIndexCounts[node], GL_UNSIGNED_INT, nullptr);
+        }
+    }
+
+    glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);  // restore default
     glEnable(GL_LIGHTING);
 
     glDisableClientState(GL_VERTEX_ARRAY);
@@ -115,7 +144,6 @@ void Mesh::render(glm::mat4 cameraInverse)
 
 void Mesh::renderOctree(OctreeNode* root)
 {
-    // Collect all bounding boxes first
     std::vector<OctreeNode*> stack = { root };
     std::vector<OctreeNode*> leafNodes;
 
@@ -129,7 +157,6 @@ void Mesh::renderOctree(OctreeNode* root)
                 stack.push_back(child);
     }
 
-    // Single GL state setup
     glPushAttrib(GL_ALL_ATTRIB_BITS);
     glDisable(GL_LIGHTING);
     glLineWidth(2.0f);
@@ -140,7 +167,6 @@ void Mesh::renderOctree(OctreeNode* root)
         {0,4},{1,5},{2,6},{3,7}
     };
 
-    // Draw all boxes in one GL_LINES call
     glColor3f(1.0f, 0.0f, 0.0f);
     glBegin(GL_LINES);
     for (OctreeNode* node : leafNodes) {
@@ -156,7 +182,6 @@ void Mesh::renderOctree(OctreeNode* root)
     }
     glEnd();
 
-    // Draw green nodes (10 or more faces)
     glColor3f(0.0f, 1.0f, 0.0f);
     glBegin(GL_LINES);
     for (OctreeNode* node : leafNodes) {
@@ -191,4 +216,43 @@ void Mesh::printOctreeHierarchy(OctreeNode* node, const std::string& prefix, boo
     int childCount = children.size();
     for (int i = 0; i < childCount; i++)
         printOctreeHierarchy(children[i], childPrefix, i == childCount - 1, false);
+}
+
+glm::vec3 Mesh::computeDensityColor(size_t faceCount) {
+    const float maxFaces = 10.0f;
+    float t = std::min((float)faceCount / maxFaces, 1.0f);
+
+    glm::vec3 colors[] = {
+        {0.0f, 0.0f, 1.0f},  // blue     t=0.00
+        {0.0f, 1.0f, 1.0f},  // cyan     t=0.25
+        {0.0f, 1.0f, 0.0f},  // green    t=0.50
+        {1.0f, 1.0f, 0.0f},  // yellow   t=0.75
+        {1.0f, 0.0f, 0.0f},  // red      t=1.00
+    };
+    int segments = 4;
+    float scaled = t * segments;
+    int idx = std::min((int)scaled, segments - 1);
+    float frac = scaled - idx;
+
+    return glm::mix(colors[idx], colors[idx + 1], frac);
+}
+
+glm::vec3 Mesh::computeDepthColor(int depth)
+{
+    const float maxDepth = 10.0f;
+    float t = std::min((float)depth / maxDepth, 1.0f);
+
+    glm::vec3 colors[] = {
+        {0.0f, 0.0f, 1.0f},  // blue     t=0.00
+        {0.0f, 1.0f, 1.0f},  // cyan     t=0.25
+        {0.0f, 1.0f, 0.0f},  // green    t=0.50
+        {1.0f, 1.0f, 0.0f},  // yellow   t=0.75
+        {1.0f, 0.0f, 0.0f},  // red      t=1.00
+    };
+    int segments = 4;
+    float scaled = t * segments;
+    int idx = std::min((int)scaled, segments - 1);
+    float frac = scaled - idx;
+
+    return glm::mix(colors[idx], colors[idx + 1], frac);
 }

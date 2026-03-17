@@ -32,11 +32,15 @@ private:
     unsigned int vertexVBO = 0;
     unsigned int indexVBO = 0;
     unsigned int normalVBO = 0;
+
     std::unordered_map<OctreeNode*, unsigned int> nodeIndexVBOs;
     std::unordered_map<OctreeNode*, int> nodeIndexCounts;
+    std::unordered_map<OctreeNode*, glm::vec3> nodeColors;
 
     OctreeNode* rootNode;
 
     void renderOctree(OctreeNode* node);
     void printOctreeHierarchy(OctreeNode* node, const std::string& prefix, bool isLast, bool isRoot);
+    glm::vec3 computeDensityColor(size_t faceCount);
+    glm::vec3 computeDepthColor(int depth);
 };
