@@ -1,5 +1,7 @@
 #include "octreeNode.h"
+
 #include <utility>
+#include <iostream>
 
 OctreeNode::OctreeNode(std::vector<Vertex*> allVertices, std::vector<Face*> allFaces) {
 
@@ -87,13 +89,18 @@ void OctreeNode::split() {
         children.push_back(new OctreeNode(childCorners[i].first, childCorners[i].second, node_depth + 1));
     }
     
+    int n = 0;
     for (Face* face : faces) {
         for (int i = 0; i < children.size(); i++) {
             if (children[i]->check(face)) {
                 children[i]->insert(face);
+                n++;
             }
         }
     }
+
+    if (n < faces.size())
+        std::cout << "Warning: not all faces were inherited by children" << std::endl;
     
     faces.clear();
     m_isSplit = true;

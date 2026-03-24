@@ -285,6 +285,8 @@ public:
      */
     int getWindowId();
 
+    void exportOctree(const std::string& outfilepath);
+
 private:
     struct Reserved;
     std::unique_ptr<Reserved> reserved;

@@ -11,6 +11,7 @@
 #include <iostream>   
 #include <source_location>
 #include <FreeImage.h>
+#include <fstream>
 
 #include <GL/glew.h>
 #include <GL/freeglut.h>
@@ -313,4 +314,40 @@ void ENG_API Eng::Base::bindSceneEvent(char key, int nodeId, KeyCallback func) {
 
     KeyEvent* event = new KeyEvent(target, func);
     scene->bindEvent(key, event);
+}
+
+void ENG_API Eng::Base::exportOctree(const std::string& outfilepath) {
+    std::ofstream file(outfilepath, std::ios::binary | std::ios::trunc);
+
+    if (!file.is_open()) {
+        throw std::runtime_error("Failed to open file: " + outfilepath);
+    }
+
+    const uint32_t magic = 0x4F435452; // "OCTR" in hex
+    file.write(reinterpret_cast<const char*>(&magic), sizeof(magic));
+
+    const uint8_t version = 1;
+    file.write(reinterpret_cast<const char*>(&version), sizeof(version));
+
+    const uint8_t max_depth = 10;
+    file.write(reinterpret_cast<const char*>(&max_depth), sizeof(max_depth));
+
+    // Write Octree Data
+    Scene* scene = this->getCurrentScene();
+    Mesh* mesh = static_cast<Mesh*>(scene->getChild(1));
+
+    if (mesh) {
+        OctreeNode* root = mesh->getOctreeRoot();
+
+
+    }
+    else {
+        throw std::runtime_error("No valid mesh found for octree export");
+    }
+
+    if (!file.good()) {
+        throw std::runtime_error("Failed to write to file: " + outfilepath);
+    }
+
+    file.close();
 }

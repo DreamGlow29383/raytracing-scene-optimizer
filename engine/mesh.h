@@ -25,6 +25,8 @@ public:
 	 */
     void render(glm::mat4 cameraInverse) override;
 
+    OctreeNode* getOctreeRoot();
+
 private:
     std::vector<Vertex*> _vertices;
     std::vector<Face*> _faces;

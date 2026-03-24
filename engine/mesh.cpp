@@ -139,7 +139,7 @@ void Mesh::render(glm::mat4 cameraInverse)
     glDisableClientState(GL_VERTEX_ARRAY);
     glDisableClientState(GL_NORMAL_ARRAY);
 
-    //renderOctree(rootNode);
+    renderOctree(rootNode);
 }
 
 void Mesh::renderOctree(OctreeNode* root)
@@ -181,6 +181,8 @@ void Mesh::renderOctree(OctreeNode* root)
             glVertex3fv(&c[e[0]].x), glVertex3fv(&c[e[1]].x);
     }
     glEnd();
+
+    glClear(GL_DEPTH_BUFFER_BIT);
 
     glColor3f(0.0f, 1.0f, 0.0f);
     glBegin(GL_LINES);
@@ -255,4 +257,8 @@ glm::vec3 Mesh::computeDepthColor(int depth)
     float frac = scaled - idx;
 
     return glm::mix(colors[idx], colors[idx + 1], frac);
+}
+
+OctreeNode* Mesh::getOctreeRoot() {
+    return rootNode;
 }
