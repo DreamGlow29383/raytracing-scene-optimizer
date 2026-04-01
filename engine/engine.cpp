@@ -12,9 +12,20 @@
 #include <source_location>
 #include <FreeImage.h>
 #include <fstream>
+#include <utility>
 
 #include <GL/glew.h>
 #include <GL/freeglut.h>
+
+#ifdef _MSC_VER
+    #include <stdlib.h>
+    #define be32toh(x) _byteswap_ulong(x)
+    #define be64toh(x) _byteswap_uint64(x)
+#elif defined(__GNUC__) || defined(__clang__)
+    #include <byteswap.h>
+    #define be32toh(x) __bswap_32(x)
+    #define be64toh(x) __bswap_64(x)
+#endif
 
 struct Eng::Base::Reserved
 {
@@ -316,6 +327,19 @@ void ENG_API Eng::Base::bindSceneEvent(char key, int nodeId, KeyCallback func) {
     scene->bindEvent(key, event);
 }
 
+std::vector<std::pair<uint64_t, OctreeNode*>> exportedNodes;
+void traverseOctree(uint64_t completeId, OctreeNode* node) {
+    if (!node->isSplit())
+        exportedNodes.push_back({ completeId, node });
+
+    if (node->hasChildren()) {
+        for (OctreeNode* child : node->getChildren()) {
+            uint64_t newId = completeId + (node->getId() >> (3 * node->getDepth()));
+            traverseOctree(newId, child);
+        }
+    }
+}
+
 void ENG_API Eng::Base::exportOctree(const std::string& outfilepath) {
     std::ofstream file(outfilepath, std::ios::binary | std::ios::trunc);
 
@@ -323,7 +347,7 @@ void ENG_API Eng::Base::exportOctree(const std::string& outfilepath) {
         throw std::runtime_error("Failed to open file: " + outfilepath);
     }
 
-    const uint32_t magic = 0x4F435452; // "OCTR" in hex
+    const uint32_t magic = be32toh(0x4F435452); // "OCTR" in hex
     file.write(reinterpret_cast<const char*>(&magic), sizeof(magic));
 
     const uint8_t version = 1;
@@ -334,12 +358,33 @@ void ENG_API Eng::Base::exportOctree(const std::string& outfilepath) {
 
     // Write Octree Data
     Scene* scene = this->getCurrentScene();
-    Mesh* mesh = static_cast<Mesh*>(scene->getChild(1));
+    Mesh* mesh = dynamic_cast<Mesh*>(scene->getChild(2));
 
     if (mesh) {
         OctreeNode* root = mesh->getOctreeRoot();
 
+        exportedNodes.clear();
+        traverseOctree(root->getId(), root);
 
+        for (std::pair<uint64_t, OctreeNode*> pair : exportedNodes) {
+            uint64_t id = be64toh(pair.first);
+            OctreeNode* node = pair.second;
+            uint8_t node_depth = node->getDepth();
+            std::vector<Face*> faces = node->getFaces();
+            uint32_t n_faces = be32toh(faces.size());
+            
+            file.write(reinterpret_cast<const char*>(&node_depth), sizeof(node_depth));
+            file.write(reinterpret_cast<const char*>(&id), sizeof(id));
+            file.write(reinterpret_cast<const char*>(&n_faces), sizeof(n_faces));
+            for (Face* face : faces) {
+                std::vector<uint32_t> indices = face->_indices;
+                std::cout << indices.size() << std::endl;
+                for (uint32_t index : indices) {
+                    uint32_t swp_index = be32toh(index);
+                    file.write(reinterpret_cast<const char*>(&swp_index), sizeof(swp_index));
+                }
+            }
+        }
     }
     else {
         throw std::runtime_error("No valid mesh found for octree export");

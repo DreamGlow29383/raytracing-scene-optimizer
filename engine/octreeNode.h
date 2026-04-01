@@ -9,7 +9,7 @@ static int max_depth = 10;
 class OctreeNode {
 public:
     OctreeNode(std::vector<Vertex*> allVertices, std::vector<Face*> allFaces);
-    OctreeNode(glm::vec3 lowerCorner, glm::vec3 upperCorner, int depth);
+    OctreeNode(glm::vec3 lowerCorner, glm::vec3 upperCorner, int depth, int id);
     ~OctreeNode();
 
     void insert(Face* face);
@@ -26,6 +26,7 @@ public:
     std::vector<Face*> getFaces() const { return faces; }
     bool hasFaces() const { return !faces.empty(); }
     int getDepth() const { return node_depth; }
+    int getId() const { return id; }
 private:
 
     void split();
@@ -45,4 +46,5 @@ private:
     glm::vec3 lowerBoundsCorner;
     glm::vec3 upperBoundsCorner;
     int node_depth = 0;
+    unsigned char id;
 };

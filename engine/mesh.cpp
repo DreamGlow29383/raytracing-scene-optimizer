@@ -209,8 +209,7 @@ Mesh::Mesh(std::vector<Face*> faces, std::vector<Vertex*> vertices)
     }
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
 
-    printOctreeHierarchy(rootNode, "", false, true);
-    debugNodeColors();
+    //printOctreeHierarchy(rootNode, "", false, true);
 }
 
 Mesh::~Mesh()

@@ -47,12 +47,15 @@ OctreeNode::OctreeNode(std::vector<Vertex*> allVertices, std::vector<Face*> allF
 
     for (Face* face : allFaces)
         insert(face);
+
+    this->id = 000;
 }
 
-OctreeNode::OctreeNode(glm::vec3 lowerCorner, glm::vec3 upperCorner, int depth) {
-    lowerBoundsCorner = lowerCorner;
-    upperBoundsCorner = upperCorner;
-    node_depth = depth;
+OctreeNode::OctreeNode(glm::vec3 lowerCorner, glm::vec3 upperCorner, int depth, int id) {
+    this->lowerBoundsCorner = lowerCorner;
+    this->upperBoundsCorner = upperCorner;
+    this->node_depth = depth;
+    this->id = id;
 }
 
 OctreeNode::~OctreeNode() {}
@@ -85,8 +88,8 @@ void OctreeNode::split() {
         }
     }
 
-    for (int i = 0; i < childCorners.size(); i++) {
-        children.push_back(new OctreeNode(childCorners[i].first, childCorners[i].second, node_depth + 1));
+    for (unsigned char i = 0; i < childCorners.size(); i++) {
+        children.push_back(new OctreeNode(childCorners[i].first, childCorners[i].second, node_depth + 1, i));
     }
     
     int n = 0;
