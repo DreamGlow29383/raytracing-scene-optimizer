@@ -124,10 +124,13 @@ void OctreeNode::insert(Face* face) {
 }
 
 bool OctreeNode::check(const Face* face) {
+
+   // small epsilon to avoid floating point errors
+   const float EPSILON = 0.0001f;
+
     for (Vertex* v: face->_vertices)
     {
-        // small epsilon to avoid floating point errors
-        const float EPSILON = 0.0001f;
+        // check if vertices are inside the box
         if (v->x >= lowerBoundsCorner.x - EPSILON && 
             v->y >= lowerBoundsCorner.y - EPSILON && 
             v->z >= lowerBoundsCorner.z - EPSILON &&
@@ -137,6 +140,42 @@ bool OctreeNode::check(const Face* face) {
             return true;
         }
     }
+
+    // Check if any edge of the triangle intersects the cube
+    for (int i = 0; i < 3; i++) {
+       Vertex* p1 = face->_vertices[i];
+       Vertex* p2 = face->_vertices[(i + 1) % 3];
+
+       // Liang-Barsky algorithm for line intersection
+       float t0 = 0.0f, t1 = 1.0f;
+       float dx = p2->x - p1->x;
+       float dy = p2->y - p1->y;
+       float dz = p2->z - p1->z;
+
+       float p[6] = { -dx, dx, -dy, dy, -dz, dz };
+       float q[6] = { p1->x - lowerBoundsCorner.x, upperBoundsCorner.x - p1->x,
+                     p1->y - lowerBoundsCorner.y, upperBoundsCorner.y - p1->y,
+                     p1->z - lowerBoundsCorner.z, upperBoundsCorner.z - p1->z };
+
+       bool intersect = true;
+       for (int j = 0; j < 6; j++) {
+          if (p[j] == 0) {
+             if (q[j] < 0) { intersect = false; break; }
+          }
+          else {
+             float t = q[j] / p[j];
+             if (p[j] < 0) {
+                if (t > t0) t0 = t;
+             }
+             else {
+                if (t < t1) t1 = t;
+             }
+          }
+       }
+
+       if (intersect && t0 <= t1) return true;
+    }
+
     return false;
 }
 
