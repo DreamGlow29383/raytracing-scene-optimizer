@@ -27,6 +27,17 @@ OctreeNode::OctreeNode(std::vector<Vertex*> allVertices, std::vector<Face*> allF
     lowerBoundsCorner = lowerCorner;
     upperBoundsCorner = upperCorner;
 
+    // make the box slightly larger than the mesh
+    const float EPSILON = 0.01f;
+
+    lowerBoundsCorner.x -= EPSILON;
+    lowerBoundsCorner.y -= EPSILON;
+    lowerBoundsCorner.z -= EPSILON;
+
+    upperBoundsCorner.x += EPSILON;
+    upperBoundsCorner.y += EPSILON;
+    upperBoundsCorner.z += EPSILON;
+
     float width = abs(upperBoundsCorner.x - lowerBoundsCorner.x);
     float height = abs(upperBoundsCorner.y - lowerBoundsCorner.y);
     float depth = abs(upperBoundsCorner.z - lowerBoundsCorner.z);
@@ -62,8 +73,7 @@ OctreeNode::~OctreeNode() {}
 
 void OctreeNode::split() {
 
-    // 1. creo 8 box
-    // 2. sposto i miei vertici in esse
+    // 1. We create 8 boxes and move the vertices into them
 
     float midX = (lowerBoundsCorner.x + upperBoundsCorner.x) / 2.0f;
     float midY = (lowerBoundsCorner.y + upperBoundsCorner.y) / 2.0f;
