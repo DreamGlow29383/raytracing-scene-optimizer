@@ -97,6 +97,7 @@ bool ENG_API Eng::Base::init(int argc, char* argv[])
     glutKeyboardFunc(keyboardCallback);
     glutKeyboardUpFunc(keyboardUpCallback);
     glutSpecialFunc(specialCallback);
+    glutMouseFunc(mouseCallback);
 
     glEnable(GL_DEPTH_TEST);
     glEnable(GL_LIGHTING);

@@ -99,6 +99,7 @@
     </ClCompile>
     <ClCompile Include="object.cpp" />
     <ClCompile Include="octreeNode.cpp" />
+    <ClCompile Include="raycast.cpp" />
     <ClCompile Include="scene.cpp" />
   </ItemGroup>
   <ItemGroup>
@@ -114,6 +115,7 @@
     <ClInclude Include="node.h" />
     <ClInclude Include="object.h" />
     <ClInclude Include="octreeNode.h" />
+    <ClInclude Include="raycast.h" />
     <ClInclude Include="scene.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

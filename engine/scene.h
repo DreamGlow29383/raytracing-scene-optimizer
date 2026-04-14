@@ -114,7 +114,24 @@ public:
 	 * @param cameraInverse The inverse of the camera's world transformation matrix.
 	 */
 	virtual void render(glm::mat4 cameraInverse) override;
+
+	// Ray tracing simulation
+	void setRay(glm::vec3 start, glm::vec3 end) {
+		_rayStart = start;
+		_rayEnd = end;
+		_showRay = true;
+	}
+	void clearRay() { _showRay = false; }
+	bool hasRay() const { return _showRay; }
+	glm::vec3 getRayStart() const { return _rayStart; }
+	glm::vec3 getRayEnd() const { return _rayEnd; }
+
 private:
+
+	bool _showRay = false;
+	glm::vec3 _rayStart;
+	glm::vec3 _rayEnd;
+
 	glm::vec4 _ambient;
 	std::map<int, Node*> _nodes;
 	Camera* _currentCamera;

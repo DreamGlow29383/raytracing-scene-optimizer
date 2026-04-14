@@ -44,6 +44,14 @@ public:
 	 */
 	virtual void render(glm::mat4 cameraInverse) override;
 
+	Eng::CameraConfig getConfig() const {
+		return _config;
+	}
+
+	glm::mat4 getProj() const {
+		return _projectionMatrix;
+	}
+
 private:
 	glm::mat4 _projectionMatrix;
 	float _aspect;

@@ -3,8 +3,7 @@
  * @brief	Client application (that uses the graphics engine)
  *
  * @author	Ruben Barros (C) SUPSI [ruben.barros@supsi.ch]
- * @author	Lorenzo Vanina (C) SUPSI [lorenzo.vanina@supsi.ch]
- * @author	Davide Villa (C) SUPSI [davide.villa@supsi.ch]
+ * @author	Sebastiano Piubellini (C) SUPSI [sebastiano.piubellin@supsi.ch]
  */
 
 #include "engine.h"

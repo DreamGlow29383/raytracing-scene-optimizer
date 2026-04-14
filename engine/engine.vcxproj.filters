@@ -43,6 +43,12 @@
     <Filter Include="Header Files\octree">
       <UniqueIdentifier>{adc69d21-7ca0-4f39-b605-240b09a3249d}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Source Files\simulation">
+      <UniqueIdentifier>{f6e23c8e-37b6-4dd8-8eca-c8ddd286f0f1}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\simulation">
+      <UniqueIdentifier>{bc1c4f6d-6c8d-45ff-9a06-89bb8c067d6a}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="engine.cpp">
@@ -84,6 +90,9 @@
     <ClCompile Include="octreeNode.cpp">
       <Filter>Source Files\octree</Filter>
     </ClCompile>
+    <ClCompile Include="raycast.cpp">
+      <Filter>Source Files\simulation</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="engine.h">
@@ -124,6 +133,9 @@
     </ClInclude>
     <ClInclude Include="octreeNode.h">
       <Filter>Header Files\octree</Filter>
+    </ClInclude>
+    <ClInclude Include="raycast.h">
+      <Filter>Header Files\simulation</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

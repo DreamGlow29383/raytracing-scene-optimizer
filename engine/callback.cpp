@@ -7,6 +7,7 @@
 #include "mesh.h"
 #include "scene.h"
 #include "importer.h"
+#include "raycast.h"
 
 #include <chrono>
 #include <iostream>
@@ -150,6 +151,14 @@ void keyboardUpCallback(unsigned char key, int mouseX, int mouseY) {
 	currentScene->fireKeyReleasedEvents(key);
 
 	glutPostWindowRedisplay(windowId);
+}
+
+void mouseCallback(int button, int state, int x, int y) {
+	if (button == GLUT_LEFT_BUTTON && state == GLUT_DOWN) {
+		std::cout << "Mouse clicked at: " << x << ", " << y << std::endl;
+		castRay(x, y);
+		glutPostWindowRedisplay(windowId); // redraw scene
+	}
 }
 
 void specialCallback(int key, int mouseX, int mouseY)
