@@ -37,7 +37,8 @@ private:
 
     std::unordered_map<OctreeNode*, unsigned int> nodeIndexVBOs;
     std::unordered_map<OctreeNode*, int> nodeIndexCounts;
-    std::unordered_map<OctreeNode*, glm::vec3> nodeColors;
+    std::unordered_map<OctreeNode*, glm::vec3> depthColors;
+    std::unordered_map<OctreeNode*, glm::vec3> faceColors;
 
     OctreeNode* rootNode;
 

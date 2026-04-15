@@ -287,6 +287,15 @@ public:
 
     void exportOctree(const std::string& outfilepath);
 
+    void setShowNodeBoundaries(bool show) { show_node_boundaries = show; }
+    bool getShowNodeBoundaries() const { return show_node_boundaries; }
+
+    void setColoringMode(int mode) { coloring_mode = mode; }
+    int getColoringMode() const { return coloring_mode; }
+
+    void setShowColoringSubmenu(bool show) { show_coloring_submenu = show; }
+    bool getShowColoringSubmenu() const { return show_coloring_submenu; }
+
 private:
     struct Reserved;
     std::unique_ptr<Reserved> reserved;
@@ -295,6 +304,10 @@ private:
     int nextSceneId = 0;
     int currentSceneId = -1;
     int windowId;
+
+    bool show_node_boundaries = false;
+    int coloring_mode = 0;
+    bool show_coloring_submenu = false;
 
     void addNode(Node* node);
     void addNodeTo(Node* parent, Node* node);

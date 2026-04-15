@@ -40,3 +40,13 @@ void keyboardUpCallback(unsigned char key, int mouseX, int mouseY);
  * @param mouseY The Y position of the mouse when the key was pressed.
  */
 void specialCallback(int key, int mouseX, int mouseY);
+
+void specialUpCallback(int key, int mouseX, int mouseY);
+
+void mouseCallback(int button, int state, int x, int y);
+
+void mouseWheelCallback(int wheel, int direction, int x, int y);
+
+void motionCallback(int x, int y);
+
+void passiveMotionCallback(int x, int y);

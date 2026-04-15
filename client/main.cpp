@@ -32,6 +32,8 @@ void cameraRightEvent(int nodeId, bool keyDown, glm::mat4 nodeTransform);
 void cameraUpEvent(int nodeId, bool keyDown, glm::mat4 nodeTransform);
 void cameraDownEvent(int nodeId, bool keyDown, glm::mat4 nodeTransform);
 
+void DrawMenuBar();
+
 std::map<char, bool> cameraKeys;
 int selectedCamera = 0;
 
@@ -78,7 +80,7 @@ int main(int argc, char *argv[])
 	glm::mat4 lightPos = glm::translate(glm::mat4(1.0f), glm::vec3(5.0f, 5.0f, 5.0f));
 	eng.setNodeTransform(lightId, lightPos);
 
-	eng.addNodeFromFile(modelPath+"cube.glb");
+	eng.addNodeFromFile(modelPath+"suzanne.glb");
 
 	eng.bindSceneEvent(3, moveCameraEvent);
 	eng.bindSceneEvent('w', 3, cameraUpEvent);

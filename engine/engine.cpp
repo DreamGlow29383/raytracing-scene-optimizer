@@ -17,6 +17,10 @@
 #include <GL/glew.h>
 #include <GL/freeglut.h>
 
+#include <imgui.h>
+#include <backends/imgui_impl_glut.h>
+#include <backends/imgui_impl_opengl3.h>
+
 #ifdef _MSC_VER
     #include <stdlib.h>
     #define be32toh(x) _byteswap_ulong(x)
@@ -73,9 +77,11 @@ bool ENG_API Eng::Base::init(int argc, char* argv[])
         return false;
     }
 
-    glutInitDisplayMode(GLUT_RGB | GLUT_DOUBLE | GLUT_DEPTH | GLUT_STENCIL);
-    
     glutInit(&argc, argv);
+    #ifdef __FREEGLUT_EXT_H__
+        glutSetOption(GLUT_ACTION_ON_WINDOW_CLOSE, GLUT_ACTION_GLUTMAINLOOP_RETURNS);
+    #endif
+    glutInitDisplayMode(GLUT_RGBA | GLUT_DOUBLE | GLUT_DEPTH | GLUT_STENCIL);
 
     int window_w = 800;
     int window_h = 600;
@@ -90,19 +96,49 @@ bool ENG_API Eng::Base::init(int argc, char* argv[])
 
     windowId = glutCreateWindow("Hanoi Tower - Group 12");
 
+    glewExperimental = GL_TRUE;
     glewInit();
+    glGetError();
+
+    glEnable(GL_DEBUG_OUTPUT);
+    glEnable(GL_DEBUG_OUTPUT_SYNCHRONOUS); // <-- forces crash to happen at the bad call
+    glDebugMessageCallback([](GLenum source, GLenum type, GLuint id, GLenum severity,
+        GLsizei length, const GLchar* message, const void* userParam)
+        {
+            if (severity == GL_DEBUG_SEVERITY_HIGH) {
+                std::cerr << "[GL ERROR] " << message << std::endl;
+            }
+        }, nullptr);
 
     glutDisplayFunc(displayCallback);
     glutReshapeFunc(reshapeCallback);
     glutKeyboardFunc(keyboardCallback);
     glutKeyboardUpFunc(keyboardUpCallback);
     glutSpecialFunc(specialCallback);
+    glutSpecialUpFunc(specialUpCallback);
+    glutMouseFunc(mouseCallback);
+    glutMouseWheelFunc(mouseWheelCallback);
+    glutMotionFunc(motionCallback);
+    glutPassiveMotionFunc(passiveMotionCallback);
 
     glEnable(GL_DEPTH_TEST);
     glEnable(GL_LIGHTING);
     glEnable(GL_NORMALIZE);
     glEnable(GL_CULL_FACE);
     glShadeModel(GL_SMOOTH);
+
+    // --- IMGUI INIT ---
+
+    IMGUI_CHECKVERSION();
+    ImGui::CreateContext();
+    ImGuiIO& io = ImGui::GetIO();
+    io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;
+    ImGui::StyleColorsDark();
+
+    ImGui_ImplGLUT_Init();
+    ImGui_ImplOpenGL3_Init("#version 440");
+
+    // ---
 
     //glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
 
@@ -137,6 +173,10 @@ bool ENG_API Eng::Base::free()
     }
 
 	FreeImage_DeInitialise();
+
+    ImGui_ImplOpenGL3_Shutdown();
+    ImGui_ImplGLUT_Shutdown();
+    ImGui::DestroyContext();
 
     return true;
 }

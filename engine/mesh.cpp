@@ -64,8 +64,8 @@ Mesh::Mesh(std::vector<Face*> faces, std::vector<Vertex*> vertices)
             glBufferData(GL_ELEMENT_ARRAY_BUFFER, indices.size() * sizeof(unsigned int), indices.data(), GL_STATIC_DRAW);
             nodeIndexVBOs[node] = vbo;
             nodeIndexCounts[node] = indices.size();
-            //nodeColors[node] = computeDensityColor(node->getFaces().size());
-            nodeColors[node] = computeDepthColor(node->getDepth());
+            faceColors[node] = computeDensityColor(node->getFaces().size());
+            depthColors[node] = computeDepthColor(node->getDepth());
         }
     }
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
@@ -80,6 +80,8 @@ Mesh::~Mesh()
 
 void Mesh::render(glm::mat4 cameraInverse)
 {
+    Eng::Base& eng = Eng::Base::getInstance();
+
     glMatrixMode(GL_MODELVIEW);
     glLoadMatrixf(glm::value_ptr(cameraInverse * this->getWC()));
 
@@ -106,7 +108,11 @@ void Mesh::render(glm::mat4 cameraInverse)
                 stack.push_back(child);
         }
         else if (node->hasFaces()) {
-            glm::vec3& col = nodeColors[node];
+            glm::vec3 col = glm::vec3(255, 255, 255);
+            if (eng.getColoringMode() == 1)
+                col = depthColors[node];
+            if (eng.getColoringMode() == 2)
+                col = faceColors[node];
             glColor3f(col.r, col.g, col.b);
             glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, nodeIndexVBOs[node]);
             glDrawElements(GL_TRIANGLES, nodeIndexCounts[node], GL_UNSIGNED_INT, nullptr);
@@ -139,7 +145,8 @@ void Mesh::render(glm::mat4 cameraInverse)
     glDisableClientState(GL_VERTEX_ARRAY);
     glDisableClientState(GL_NORMAL_ARRAY);
 
-    renderOctree(rootNode);
+    if (eng.getShowNodeBoundaries())
+        renderOctree(rootNode);
 }
 
 void Mesh::renderOctree(OctreeNode* root)

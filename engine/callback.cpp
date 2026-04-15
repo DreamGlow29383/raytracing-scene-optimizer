@@ -18,6 +18,10 @@
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/type_ptr.hpp>
 
+#include <imgui.h>
+#include <backends/imgui_impl_glut.h>
+#include <backends/imgui_impl_opengl3.h>
+
 int windowId = NULL;
 int _width;
 int _height;
@@ -33,6 +37,59 @@ float fps = 0;
 void calculateFPS();
 void printNodeHierarchy(Node* node, const std::string& prefix = "", bool isLast = false, bool isRoot = true);
 float getDeltaTime();
+
+void DrawMenuBar() {
+	Eng::Base& eng = Eng::Base::getInstance();
+
+	if (ImGui::BeginMainMenuBar()) {
+		// --- File Menu ---
+		if (ImGui::BeginMenu("File")) {
+			if (ImGui::MenuItem("Generate")) {
+				// Action for Generate
+				std::cout << "Generate selected" << std::endl;
+			}
+			if (ImGui::MenuItem("Import")) {
+				// Action for Import
+				std::cout << "Import selected" << std::endl;
+			}
+			if (ImGui::MenuItem("Export")) {
+				// Action for Export
+				std::cout << "Export selected" << std::endl;
+			}
+			ImGui::EndMenu();
+		}
+
+		// --- View Menu ---
+		if (ImGui::BeginMenu("View")) {
+			// Node boundaries toggle
+			bool nodeBoundaries = eng.getShowNodeBoundaries();
+			if (ImGui::MenuItem("Node Boundaries", nullptr, &nodeBoundaries)) {
+				eng.setShowNodeBoundaries(nodeBoundaries);
+			}
+
+			// Coloring menu item with a side menu (popup)
+			if (ImGui::BeginMenu("Coloring")) {
+				// "None" option
+				if (ImGui::MenuItem("None", nullptr, eng.getColoringMode() == 0)) {
+					eng.setColoringMode(0);
+				}
+				// "Depth" option
+				if (ImGui::MenuItem("Depth", nullptr, eng.getColoringMode() == 1)) {
+					eng.setColoringMode(1);
+				}
+				// "Faces" option
+				if (ImGui::MenuItem("Faces", nullptr, eng.getColoringMode() == 2)) {
+					eng.setColoringMode(2);
+				}
+				ImGui::EndMenu();
+			}
+
+			ImGui::EndMenu();
+		}
+
+		ImGui::EndMainMenuBar();
+	}
+}
 
 void displayCallback() 
 {
@@ -55,6 +112,11 @@ void displayCallback()
 		printNodeHierarchy(currentScene);
 	}
 
+	ImGui_ImplOpenGL3_NewFrame();
+	ImGui_ImplGLUT_NewFrame();
+	ImGui::NewFrame();
+	ImGuiIO& io = ImGui::GetIO();
+
 	//////////////////////////
 	// 3D Rendering:
 
@@ -62,11 +124,26 @@ void displayCallback()
 	glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
+	// Setup
+	glEnable(GL_LIGHTING);
+	glEnable(GL_DEPTH_TEST);
+
+	glMatrixMode(GL_MODELVIEW);
+
 	// Calculate FPS
 	calculateFPS();
 
 	currentScene->render(currentScene->getCurrentCamera()->computeInverse());
+	
+	//////////////////////////
+	// ImGui Interface
 
+	DrawMenuBar();
+
+	ImGui::Render();
+	ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
+
+	/*
 	//////////////////////////
     // 2D Text Rendering:
 
@@ -113,10 +190,8 @@ void displayCallback()
 		verticalShift -= 20.0f;
 	}
 
-	glEnable(GL_LIGHTING);
-	glEnable(GL_DEPTH_TEST);
-
-	glMatrixMode(GL_MODELVIEW);
+	//////////////////////////
+	*/
 
 	glutSwapBuffers();
 	glutPostWindowRedisplay(windowId);
@@ -124,6 +199,8 @@ void displayCallback()
 
 void reshapeCallback(int width, int height)
 {
+	ImGui_ImplGLUT_ReshapeFunc(width, height);
+
 	_width = width;
 	_height = height;
 
@@ -137,6 +214,8 @@ void reshapeCallback(int width, int height)
 
 void keyboardCallback(unsigned char key, int mouseX, int mouseY)
 {
+	ImGui_ImplGLUT_KeyboardFunc(key, mouseX, mouseY);
+
 	Eng::Base& eng = Eng::Base::getInstance();
 	Scene* currentScene = eng.getCurrentScene();
 	currentScene->fireKeyPressedEvents(key);
@@ -144,7 +223,10 @@ void keyboardCallback(unsigned char key, int mouseX, int mouseY)
 	glutPostWindowRedisplay(windowId);
 }
 
-void keyboardUpCallback(unsigned char key, int mouseX, int mouseY) {
+void keyboardUpCallback(unsigned char key, int mouseX, int mouseY) 
+{
+	ImGui_ImplGLUT_KeyboardUpFunc(key, mouseX, mouseY);
+
 	Eng::Base& eng = Eng::Base::getInstance();
 	Scene* currentScene = eng.getCurrentScene();
 	currentScene->fireKeyReleasedEvents(key);
@@ -154,6 +236,8 @@ void keyboardUpCallback(unsigned char key, int mouseX, int mouseY) {
 
 void specialCallback(int key, int mouseX, int mouseY)
 {
+	ImGui_ImplGLUT_SpecialFunc(key, mouseX, mouseY);
+
 	switch (key)
 	{
 	case GLUT_KEY_CTRL_L:
@@ -166,6 +250,31 @@ void specialCallback(int key, int mouseX, int mouseY)
 	}
 
 	glutPostWindowRedisplay(windowId);
+}
+
+void specialUpCallback(int key, int mouseX, int mouseY) 
+{
+	ImGui_ImplGLUT_SpecialUpFunc(key, mouseX, mouseY);
+}
+
+void mouseCallback(int button, int state, int x, int y)
+{
+	ImGui_ImplGLUT_MouseFunc(button, state, x, y);
+}
+
+void mouseWheelCallback(int wheel, int direction, int x, int y)
+{
+	ImGui_ImplGLUT_MouseWheelFunc(wheel, direction, x, y);
+}
+
+void motionCallback(int x, int y)
+{
+	ImGui_ImplGLUT_MotionFunc(x, y);
+}
+
+void passiveMotionCallback(int x, int y)
+{
+	ImGui_ImplGLUT_MotionFunc(x, y);
 }
 
 void calculateFPS() {
