@@ -80,15 +80,15 @@ int main(int argc, char *argv[])
 	glm::mat4 lightPos = glm::translate(glm::mat4(1.0f), glm::vec3(5.0f, 5.0f, 5.0f));
 	eng.setNodeTransform(lightId, lightPos);
 
-	eng.addNodeFromFile(modelPath+"suzanne.glb");
+	//eng.addNodeFromFile(modelPath+"suzanne.glb");
 
-	eng.bindSceneEvent(3, moveCameraEvent);
-	eng.bindSceneEvent('w', 3, cameraUpEvent);
-	eng.bindSceneEvent('a', 3, cameraLeftEvent);
-	eng.bindSceneEvent('s', 3, cameraDownEvent);
-	eng.bindSceneEvent('d', 3, cameraRightEvent);
+	eng.bindSceneEvent(1, moveCameraEvent);
+	eng.bindSceneEvent('w', 1, cameraUpEvent);
+	eng.bindSceneEvent('a', 1, cameraLeftEvent);
+	eng.bindSceneEvent('s', 1, cameraDownEvent);
+	eng.bindSceneEvent('d', 1, cameraRightEvent);
 
-	eng.exportOctree("octree.oct");
+	//eng.exportOctree("octree.oct");
 	eng.run();
 
 	eng.free();

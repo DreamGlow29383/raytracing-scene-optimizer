@@ -16,7 +16,7 @@ ENG_API Node::~Node()
 	
 }
 
-void ENG_API  Node::addChild(Node* child)
+void ENG_API Node::addChild(Node* child)
 {
 	_children.push_back(child);
 	child->setParent(this);

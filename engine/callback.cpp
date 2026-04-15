@@ -115,6 +115,11 @@ void DrawMenuBar() {
 			if (ImGuiFileDialog::Instance()->IsOk()) {
 				std::string filePath = ImGuiFileDialog::Instance()->GetFilePathName();
 				std::cout << "Generate selected: " << filePath << std::endl;
+				if (eng.getCurrentScene()->getNrOfChildren() > 2)
+					eng.getCurrentScene()->removeChild(2);
+				eng.addNodeFromFile(filePath);
+				eng.getCurrentScene()->computeRenderList();
+				printNodeHierarchy(eng.getCurrentScene());
 				// eng.addNodeFromFile(filePath);
 			}
 			ImGuiFileDialog::Instance()->Close();

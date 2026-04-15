@@ -230,6 +230,8 @@ public:
      */
     int addNodeCamera(CameraConfig config);
 
+    void removeNode(int id);
+
     /**
      * @brief Loads a 3D model from file and adds it to the scene.
      * @param parent The ID of the parent node.

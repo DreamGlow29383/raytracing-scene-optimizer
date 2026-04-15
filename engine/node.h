@@ -30,14 +30,14 @@ public:
 	 * @brief Adds a child node to this node.
 	 * @param child Pointer to the child node.
 	 */
-	void addChild(Node* child);
+	virtual void addChild(Node* child);
 
 	/**
 	 * @brief Removes a child node by index.
 	 * @param idx Index of the child in the list.
 	 * @return Pointer to the removed node (ownership is transferred back).
 	 */
-	Node* removeChild(std::uint32_t idx);
+	virtual Node* removeChild(std::uint32_t idx);
 
 	/**
 	 * @brief Gets a child node by index.

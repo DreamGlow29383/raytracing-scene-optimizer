@@ -313,6 +313,17 @@ int ENG_API Eng::Base::addNodeCamera(Eng::CameraConfig config) {
     return addNodeCamera(currentSceneId, config);
 }
 
+void ENG_API Eng::Base::removeNode(int id) {
+    Scene* scene = getCurrentScene();
+    for (int i = 0; i < scene->getNrOfChildren(); i++) {
+        Node* current = scene->getChild(i);
+        if (current->getId() == id) {
+            scene->removeChild(i);
+            break;
+        }
+    }
+}
+
 int ENG_API Eng::Base::addNodeFromFile(int parent, const std::string& filepath) {
     std::vector<Vertex*> outVertices;
     std::vector<Face*> outFaces;
