@@ -19,6 +19,7 @@
 #include <glm/gtc/type_ptr.hpp>
 
 #include <imgui.h>
+#include <ImGuiFileDialog.h>
 #include <backends/imgui_impl_glut.h>
 #include <backends/imgui_impl_opengl3.h>
 
@@ -44,40 +45,51 @@ void DrawMenuBar() {
 	if (ImGui::BeginMainMenuBar()) {
 		// --- File Menu ---
 		if (ImGui::BeginMenu("File")) {
+			IGFD::FileDialogConfig config; config.path = ".";
+
 			if (ImGui::MenuItem("Generate")) {
-				// Action for Generate
-				std::cout << "Generate selected" << std::endl;
+				ImGuiFileDialog::Instance()->OpenDialog(
+					"ChooseFileDlgKey",
+					"Select a File to Generate",
+					".obj,.gltf,.glb,.fbx",
+					config
+				);
 			}
+
 			if (ImGui::MenuItem("Import")) {
-				// Action for Import
-				std::cout << "Import selected" << std::endl;
+				ImGuiFileDialog::Instance()->OpenDialog(
+					"ImportFileDlgKey",
+					"Import Octree-Optimized Model",
+					".obj,.gltf,.glb,.fbx",
+					config
+				);
 			}
+
 			if (ImGui::MenuItem("Export")) {
-				// Action for Export
-				std::cout << "Export selected" << std::endl;
+				ImGuiFileDialog::Instance()->OpenDialog(
+					"ExportFolderDlgKey",
+					"Select Export Folder",
+					nullptr,
+					config
+				);
 			}
 			ImGui::EndMenu();
 		}
 
+
 		// --- View Menu ---
 		if (ImGui::BeginMenu("View")) {
-			// Node boundaries toggle
-			bool nodeBoundaries = eng.getShowNodeBoundaries();
-			if (ImGui::MenuItem("Node Boundaries", nullptr, &nodeBoundaries)) {
-				eng.setShowNodeBoundaries(nodeBoundaries);
+			if (ImGui::MenuItem("Node Boundaries", nullptr, eng.getShowNodeBoundaries())) {
+				eng.setShowNodeBoundaries(!eng.getShowNodeBoundaries());
 			}
 
-			// Coloring menu item with a side menu (popup)
 			if (ImGui::BeginMenu("Coloring")) {
-				// "None" option
 				if (ImGui::MenuItem("None", nullptr, eng.getColoringMode() == 0)) {
 					eng.setColoringMode(0);
 				}
-				// "Depth" option
 				if (ImGui::MenuItem("Depth", nullptr, eng.getColoringMode() == 1)) {
 					eng.setColoringMode(1);
 				}
-				// "Faces" option
 				if (ImGui::MenuItem("Faces", nullptr, eng.getColoringMode() == 2)) {
 					eng.setColoringMode(2);
 				}
@@ -87,7 +99,44 @@ void DrawMenuBar() {
 			ImGui::EndMenu();
 		}
 
+		std::string fpsText = "FPS: " + std::to_string((int)fps);
+		ImVec2 textSize = ImGui::CalcTextSize(fpsText.c_str());
+
+		float textX = _width - textSize.x - 10;
+
+		ImGui::SetCursorPosX(textX);
+		ImGui::TextColored(ImVec4(0.5f, 1.0f, 0.5f, 1.0f), "%s", fpsText.c_str());
+
 		ImGui::EndMainMenuBar();
+
+		ImVec2 maxSize = ImVec2(_width, _height);
+		ImVec2 minSize = ImVec2(_width / 2, _height / 2);
+		if (ImGuiFileDialog::Instance()->Display("ChooseFileDlgKey", ImGuiWindowFlags_NoCollapse, minSize, maxSize)) {
+			if (ImGuiFileDialog::Instance()->IsOk()) {
+				std::string filePath = ImGuiFileDialog::Instance()->GetFilePathName();
+				std::cout << "Generate selected: " << filePath << std::endl;
+				// eng.addNodeFromFile(filePath);
+			}
+			ImGuiFileDialog::Instance()->Close();
+		}
+
+		if (ImGuiFileDialog::Instance()->Display("ImportFileDlgKey", ImGuiWindowFlags_NoCollapse, minSize, maxSize)) {
+			if (ImGuiFileDialog::Instance()->IsOk()) {
+				std::string filePath = ImGuiFileDialog::Instance()->GetFilePathName();
+				std::cout << "Importing: " << filePath << std::endl;
+				// import an already octree-optimized model
+			}
+			ImGuiFileDialog::Instance()->Close();
+		}
+
+		if (ImGuiFileDialog::Instance()->Display("ExportFolderDlgKey", ImGuiWindowFlags_NoCollapse, minSize, maxSize)) {
+			if (ImGuiFileDialog::Instance()->IsOk()) {
+				std::string folderPath = ImGuiFileDialog::Instance()->GetCurrentPath();
+				std::cout << "Exporting to: " << folderPath << std::endl;
+				// eng.exportOctree(folderPath + "/octree.oct");
+			}
+			ImGuiFileDialog::Instance()->Close();
+		}
 	}
 }
 
