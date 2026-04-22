@@ -14,19 +14,8 @@ void castRay(int mouseX, int mouseY) {
 	int viewport[4];
 	glGetIntegerv(GL_VIEWPORT, viewport);
 
-	GLdouble projMatrix[16];
-	glGetDoublev(GL_PROJECTION_MATRIX, projMatrix);
-
-	glm::mat4 view = camera->getTransform();
-
-	glm::mat4 cameraWorld = glm::inverse(view);
-	glm::mat4 viewMatrix = glm::inverse(cameraWorld);
-
-	// Convert to GLdouble array for gluUnProject
-	GLdouble modelMatrix[16];
-	for (int i = 0; i < 16; i++) {
-		modelMatrix[i] = viewMatrix[i / 4][i % 4];
-	}
+	glm::mat4 projMatrix = camera->getProj();
+	glm::mat4 viewMatrix = glm::inverse(camera->getTransform());
 
 	// Convert screen coordinates to gldouble
 	GLdouble winX = (GLdouble)mouseX;
@@ -34,13 +23,21 @@ void castRay(int mouseX, int mouseY) {
 	GLfloat depth;
 	glReadPixels(mouseX, mouseY, 1, 1, GL_DEPTH_COMPONENT, GL_FLOAT, &depth);
 
+	double modelArray[16];
+	double projArray[16];
+
+	for (int i = 0; i < 16; i++) {
+		modelArray[i] = viewMatrix[i / 4][i % 4];
+		projArray[i] = projMatrix[i / 4][i % 4];
+	}
+
 	// Ray start point at near plane
 	GLdouble nearX, nearY, nearZ;
-	gluUnProject(winX, winY, 0.0f, modelMatrix, projMatrix, viewport, &nearX, &nearY, &nearZ);
+	gluUnProject(winX, winY, 0.0f, modelArray, projArray, viewport, &nearX, &nearY, &nearZ);
 
 	// Ray end point at far plane
 	GLdouble farX, farY, farZ;
-	gluUnProject(winX, winY, 1.0f, modelMatrix, projMatrix, viewport, &farX, &farY, &farZ);
+	gluUnProject(winX, winY, 1.0f, modelArray, projArray, viewport, &farX, &farY, &farZ);
 
 	glm::vec3 rayStart = glm::vec3((GLfloat)nearX, (GLfloat)nearY, (GLfloat)nearZ);
 	//glm::vec3 rayStart = glm::vec3((GLfloat)50, (GLfloat)50, (GLfloat)100);
