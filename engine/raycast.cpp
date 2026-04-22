@@ -20,8 +20,6 @@ void castRay(int mouseX, int mouseY) {
 	// Convert screen coordinates to gldouble
 	GLdouble winX = (GLdouble)mouseX;
 	GLdouble winY = (GLdouble)viewport[3] - (GLdouble)mouseY;
-	GLfloat depth;
-	glReadPixels(mouseX, mouseY, 1, 1, GL_DEPTH_COMPONENT, GL_FLOAT, &depth);
 
 	double modelArray[16];
 	double projArray[16];
@@ -40,9 +38,7 @@ void castRay(int mouseX, int mouseY) {
 	gluUnProject(winX, winY, 1.0f, modelArray, projArray, viewport, &farX, &farY, &farZ);
 
 	glm::vec3 rayStart = glm::vec3((GLfloat)nearX, (GLfloat)nearY, (GLfloat)nearZ);
-	//glm::vec3 rayStart = glm::vec3((GLfloat)50, (GLfloat)50, (GLfloat)100);
 	glm::vec3 rayEnd = glm::vec3((GLfloat)farX, (GLfloat)farY, (GLfloat)farZ);
-	//glm::vec3 rayEnd = glm::vec3((GLfloat)-50, (GLfloat)50, (GLfloat)-100);
 
 	std::cout << "rayStart: (" << rayStart.x << ", " << rayStart.y << ", " << rayStart.z << ")" << std::endl;
 	std::cout << "rayEnd: (" << rayEnd.x << ", " << rayEnd.y << ", " << rayEnd.z << ")" << std::endl;
