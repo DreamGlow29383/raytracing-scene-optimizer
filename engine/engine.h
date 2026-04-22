@@ -288,6 +288,7 @@ public:
     int getWindowId();
 
     void exportOctree(const std::string& outfilepath);
+    void importOctree(const std::string& infilepath);
 
     void setShowNodeBoundaries(bool show) { show_node_boundaries = show; }
     bool getShowNodeBoundaries() const { return show_node_boundaries; }

@@ -22,9 +22,11 @@ public:
     glm::vec3 getLowerBounds() const { return lowerBoundsCorner; }
     glm::vec3 getUpperBounds() const { return upperBoundsCorner; }
     std::vector<OctreeNode*> getChildren() const { return children; }
+    void addChild(OctreeNode* node);
     bool hasChildren() const { return !children.empty(); }
     std::vector<Face*> getFaces() const { return faces; }
     bool hasFaces() const { return !faces.empty(); }
+    void setFaces(std::vector<Face*> faces) { this->faces = faces; }
     int getDepth() const { return node_depth; }
     int getId() const { return id; }
 private:

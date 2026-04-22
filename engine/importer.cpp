@@ -10,7 +10,7 @@
 #include <iostream>
 #include <vector>
 
-bool importFile(const std::string& filepath, std::vector<Vertex*>& outVertices, std::vector<Face*>& outFaces)
+bool importFile(const std::string& filepath, std::vector<Vertex*>& outVertices, std::unordered_map<std::tuple<unsigned int, unsigned int, unsigned int>, Face*> outFaces)
 {
     Assimp::Importer importer;
 
@@ -76,7 +76,7 @@ bool importFile(const std::string& filepath, std::vector<Vertex*>& outVertices, 
             face->_indices = indices;
             face->_vertices = faceVertices;
 
-            outFaces.push_back(face);
+            outFaces.emplace(std::make_tuple(indices[0], indices[1], indices[2]), face);
         }
     }
 

@@ -60,16 +60,19 @@ void DrawMenuBar() {
 				ImGuiFileDialog::Instance()->OpenDialog(
 					"ImportFileDlgKey",
 					"Import Octree-Optimized Model",
-					".obj,.gltf,.glb,.fbx",
+					".oct",
 					config
 				);
 			}
 
 			if (ImGui::MenuItem("Export")) {
+				IGFD::FileDialogConfig config;
+				config.path = ".";
+				config.flags = ImGuiFileDialogFlags_ConfirmOverwrite;
 				ImGuiFileDialog::Instance()->OpenDialog(
-					"ExportFolderDlgKey",
-					"Select Export Folder",
-					nullptr,
+					"ExportFileDlgKey",           
+					"Export Octree File",         
+					".oct",                       
 					config
 				);
 			}
@@ -120,7 +123,6 @@ void DrawMenuBar() {
 				eng.addNodeFromFile(filePath);
 				eng.getCurrentScene()->computeRenderList();
 				printNodeHierarchy(eng.getCurrentScene());
-				// eng.addNodeFromFile(filePath);
 			}
 			ImGuiFileDialog::Instance()->Close();
 		}
@@ -129,16 +131,21 @@ void DrawMenuBar() {
 			if (ImGuiFileDialog::Instance()->IsOk()) {
 				std::string filePath = ImGuiFileDialog::Instance()->GetFilePathName();
 				std::cout << "Importing: " << filePath << std::endl;
-				// import an already octree-optimized model
+				eng.importOctree(filePath);
 			}
 			ImGuiFileDialog::Instance()->Close();
 		}
 
-		if (ImGuiFileDialog::Instance()->Display("ExportFolderDlgKey", ImGuiWindowFlags_NoCollapse, minSize, maxSize)) {
+		if (ImGuiFileDialog::Instance()->Display("ExportFileDlgKey", ImGuiWindowFlags_NoCollapse, minSize, maxSize)) {
 			if (ImGuiFileDialog::Instance()->IsOk()) {
-				std::string folderPath = ImGuiFileDialog::Instance()->GetCurrentPath();
-				std::cout << "Exporting to: " << folderPath << std::endl;
-				// eng.exportOctree(folderPath + "/octree.oct");
+				std::string filePath = ImGuiFileDialog::Instance()->GetFilePathName();
+
+				if (filePath.substr(filePath.find_last_of(".") + 1) != "oct") {
+					filePath += ".oct";
+				}
+
+				std::cout << "Exporting to: " << filePath << std::endl;
+				eng.exportOctree(filePath);
 			}
 			ImGuiFileDialog::Instance()->Close();
 		}
@@ -181,6 +188,8 @@ void displayCallback()
 	// Setup
 	glEnable(GL_LIGHTING);
 	glEnable(GL_DEPTH_TEST);
+	glEnable(GL_NORMALIZE);
+	glEnable(GL_CULL_FACE);
 
 	glMatrixMode(GL_MODELVIEW);
 

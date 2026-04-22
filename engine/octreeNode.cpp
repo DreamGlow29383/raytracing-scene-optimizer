@@ -185,3 +185,7 @@ bool OctreeNode::check(const Face* face) {
 bool OctreeNode::isSplit() {
     return this->m_isSplit;
 }
+
+void OctreeNode::addChild(OctreeNode* node) {
+    children.push_back(node);
+}

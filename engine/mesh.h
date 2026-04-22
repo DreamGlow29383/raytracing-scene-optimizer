@@ -17,6 +17,7 @@
 class Mesh : public Node {
 public:
     Mesh(std::vector<Face*> faces, std::vector<Vertex*> vertices);
+    Mesh(std::vector<Face*> faces, std::vector<Vertex*> vertices, OctreeNode* octreeRoot);
     virtual ~Mesh();
 
     /**
@@ -41,6 +42,8 @@ private:
     std::unordered_map<OctreeNode*, glm::vec3> faceColors;
 
     OctreeNode* rootNode;
+
+    void generateMesh(std::vector<Face*> faces, std::vector<Vertex*> vertices);
 
     void renderOctree(OctreeNode* node);
     void printOctreeHierarchy(OctreeNode* node, const std::string& prefix, bool isLast, bool isRoot);
