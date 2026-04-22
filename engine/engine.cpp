@@ -88,7 +88,7 @@ bool ENG_API Eng::Base::init(int argc, char* argv[])
 
     glutSetOption(GLUT_ACTION_ON_WINDOW_CLOSE, GLUT_ACTION_GLUTMAINLOOP_RETURNS);
 
-    windowId = glutCreateWindow("Hanoi Tower - Group 12");
+    windowId = glutCreateWindow("Raytracing Octree Optimization");
 
     glewInit();
 

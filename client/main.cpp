@@ -42,7 +42,7 @@ int selectedCamera = 0;
  */
 int main(int argc, char *argv[])
 {
-	std::cout << "Hanoi Tower Project - Group 12" << std::endl;
+	std::cout << "Raytracing octree optimizer" << std::endl;
 	std::cout << std::endl;
 
 	Eng::Base &eng = Eng::Base::getInstance();
