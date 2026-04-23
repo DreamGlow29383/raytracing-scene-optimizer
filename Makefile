@@ -3,33 +3,36 @@
 ENGINE_DIR := engine
 CLIENT_DIR := client
 RES_DIR    := client/models
+CONFIG ?= Debug
 
 OUTPUT_DIR    := artifacts
 ARTIFACT_NAME := CG_Group12_project_release.tar.gz
 
+
 all: pipeline
 
 engine:
-	@echo "--- [1/3] Building Backend (Engine) ---"
-	$(MAKE) -C $(ENGINE_DIR) engine
+	@echo "--- [1/3] Building Backend (Engine) ($(CONFIG)) ---"
+	$(MAKE) -C $(ENGINE_DIR) CONFIG=$(CONFIG) engine
 
 client: engine
-	@echo "--- [2/3] Building Frontend (Client) ---"
-	$(MAKE) -C $(CLIENT_DIR) client
+	@echo "--- [2/3] Building Frontend (Client) ($(CONFIG)) ---"
+	$(MAKE) -C $(CLIENT_DIR) CONFIG=$(CONFIG) client
 
 test: engine
 	@echo "--- [3/3] Running Tests on Backend ---"
 #	$(MAKE) -C $(ENGINE_DIR) test
 
-package: client test
+
+package: client
 	@echo "--- Packaging Artifacts (No Rebuild) ---"
 	mkdir -p $(OUTPUT_DIR)
 	rm -rf temp_package
 	mkdir -p temp_package
 	
 	@echo "Copying binaries..."
-	cp $(ENGINE_DIR)/bin/Release/libengine.so temp_package/
-	cp $(CLIENT_DIR)/bin/Release/client temp_package/
+	cp $(ENGINE_DIR)/bin/$(CONFIG)/libengine.so temp_package/
+	cp $(CLIENT_DIR)/bin/$(CONFIG)/client temp_package/
 	
 	@echo "Copying resources..."
 	@[ -d "$(RES_DIR)" ] && cp -r "$(RES_DIR)" temp_package/ || echo "Info: No directory '$(RES_DIR)' found, skipping the copy."
@@ -47,7 +50,14 @@ package: client test
 	rm -rf temp_package
 	@echo "SUCCESS: Artifact created at $(OUTPUT_DIR)/$(ARTIFACT_NAME)"
 
-pipeline: engine client test package
+pipeline: engine client package
+
+.PHONY: Debug Release
+Debug:
+	$(MAKE) CONFIG=Debug pipeline
+
+Release:
+	$(MAKE) CONFIG=Release pipeline
 
 clean:
 	$(MAKE) -C $(ENGINE_DIR) clean

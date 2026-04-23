@@ -14,33 +14,25 @@ jobs:
   build:
     runs-on: ubuntu-latest
     
-    strategy:
-      matrix:
-        compiler: [gcc, clang]
-        
     steps:
     - uses: actions/checkout@v4
     
     - name: Install dependencies
       run: |
         sudo apt-get update
-        sudo apt-get install -y build-essential cmake ninja-build
-        # Add any other dependencies your project needs
-        # Example: sudo apt-get install -y libboost-all-dev
+        sudo apt-get install -y \
+          build-essential \
+          libglew-dev \
+          libglu1-mesa-dev \
+          libgl1-mesa-dev \
+          libfreeimage-dev \
+          libassimp-dev \
+          freeglut3-dev
     
-    - name: Configure with CMake
+    - name: Build (Debug)
       run: |
-        mkdir -p build
-        cd build
-        cmake .. -DCMAKE_BUILD_TYPE=Release -G Ninja
+        make Debug
     
-    - name: Build
+    - name: Build (Release)
       run: |
-        cd build
-        cmake --build . --config Release
-    
-    - name: Run tests (if you have them)
-      run: |
-        cd build
-        ctest --output-on-failure
-      continue-on-error: false
+        make Release

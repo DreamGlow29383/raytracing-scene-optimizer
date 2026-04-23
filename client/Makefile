@@ -2,12 +2,12 @@
 
 CXX      := g++
 CXXFLAGS := -std=c++17 -Wall -Wextra -I../engine
-ENGINE_LIB_DIR := ../engine/bin/Release
+ENGINE_LIB_DIR := ../engine/bin/$(CONFIG)
 LDFLAGS  := -L$(ENGINE_LIB_DIR) -lengine -Wl,-rpath,'$$ORIGIN'
-LIBS     := -lfreeimage -lGL -lGLU -lglut -lassimp
+LIBS     := -lfreeimage -lGL -lGLU -lGLEW -lglut -lassimp
 
 BUILD_DIR := build
-BIN_DIR   := bin/Release
+BIN_DIR   := bin/$(CONFIG)
 
 EXE_NAME  := client
 TARGET    := $(BIN_DIR)/$(EXE_NAME)

@@ -1,12 +1,14 @@
 # --- Engine Makefile ---
 
+CONFIG ?= Debug
+
 CXX      := g++
-CXXFLAGS := -std=c++17 -Wall -Wextra -fPIC -Iinclude
+CXXFLAGS := -std=c++17 -Wall -Wextra -fPIC -Iinclude -g
 LDFLAGS  := -shared
-LIBS     := -lglut -lGLU -lGL -lfreeimage -lassimp
+LIBS     := -lGLEW -lglut -lGLU -lGL -lfreeimage -lassimp
 
 BUILD_DIR := build
-BIN_DIR   := bin/Release
+BIN_DIR   := bin/$(CONFIG)
 TEST_DIR  := ../test
 
 LIB_NAME  := libengine.so
