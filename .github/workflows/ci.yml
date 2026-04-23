@@ -27,7 +27,8 @@ jobs:
           libgl1-mesa-dev \
           libfreeimage-dev \
           libassimp-dev \
-          freeglut3-dev
+          freeglut3-dev \
+          libglm-dev
     
     - name: Build (Debug)
       run: |
