@@ -106,11 +106,10 @@ void OctreeNode::split() {
         std::cout << "Warning: not all faces were inherited by children" << std::endl;
     
     faces.clear();
-    m_isSplit = true;
 }
 
 void OctreeNode::insert(Face* face) {
-    if (m_isSplit) {
+    if (hasChildren()) {
         for (OctreeNode* child : children)
             if (child->check(face))
                 child->insert(face);
@@ -180,10 +179,6 @@ bool OctreeNode::check(const Face* face) {
     }
 
     return false;
-}
-
-bool OctreeNode::isSplit() {
-    return this->m_isSplit;
 }
 
 void OctreeNode::addChild(OctreeNode* node) {

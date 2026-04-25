@@ -16,7 +16,6 @@ public:
 
     // check if vertices are within bounding box
     bool check(const Face* face);
-    bool isSplit();
     void render(glm::mat4 cameraInverse);
 
     glm::vec3 getLowerBounds() const { return lowerBoundsCorner; }
@@ -32,7 +31,6 @@ public:
 private:
 
     void split();
-    bool m_isSplit = false;
     std::vector<Face*> faces;
 
    /* children assigned in order left to right, front to back, bottom to top

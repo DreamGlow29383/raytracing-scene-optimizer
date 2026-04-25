@@ -131,7 +131,11 @@ void DrawMenuBar() {
 			if (ImGuiFileDialog::Instance()->IsOk()) {
 				std::string filePath = ImGuiFileDialog::Instance()->GetFilePathName();
 				std::cout << "Importing: " << filePath << std::endl;
+				if (eng.getCurrentScene()->getNrOfChildren() > 2)
+					eng.getCurrentScene()->removeChild(2);
 				eng.importOctree(filePath);
+				eng.getCurrentScene()->computeRenderList();
+				printNodeHierarchy(eng.getCurrentScene());
 			}
 			ImGuiFileDialog::Instance()->Close();
 		}

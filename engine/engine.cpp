@@ -329,7 +329,7 @@ void ENG_API Eng::Base::removeNode(int id) {
 
 int ENG_API Eng::Base::addNodeFromFile(int parent, const std::string& filepath) {
     std::vector<Vertex*> outVertices;
-    std::unordered_map<std::tuple<unsigned int, unsigned int, unsigned int>, Face*> outFaces;
+    std::map<std::tuple<unsigned int, unsigned int, unsigned int>, Face*> outFaces;
 
     bool success = importFile(filepath, outVertices, outFaces);
     std::string meshName = filepath.substr(filepath.find_last_of("\\") + 1);
@@ -347,6 +347,7 @@ int ENG_API Eng::Base::addNodeFromFile(int parent, const std::string& filepath) 
         Mesh* mesh = new Mesh(meshFaces, outVertices);
         mesh->setName(meshName);
         std::cout << "[+] Mesh Loaded: " << mesh->getName() << std::endl;
+        std::cout << "[?] Faces: " << meshFaces.size() << std::endl;
         addNodeTo(getCurrentScene()->getNode(parent), mesh);
         return mesh->getId();
     }
@@ -393,7 +394,7 @@ void ENG_API Eng::Base::bindSceneEvent(char key, int nodeId, KeyCallback func) {
 
 std::vector<std::pair<uint64_t, OctreeNode*>> exportedNodes;
 void traverseOctree(uint64_t completeId, OctreeNode* node) {
-    if (!node->isSplit())
+    if (!node->hasChildren())
         exportedNodes.push_back({ completeId, node });
 
     if (node->hasChildren()) {
@@ -449,29 +450,27 @@ void ENG_API Eng::Base::exportOctree(const std::string& outfilepath) {
             std::vector<Face*> faces = node->getFaces();
             uint32_t n_faces = be32toh(faces.size());
 
-            uint16_t upperCornerX = be16toh(node->getUpperBounds().x);
-            uint16_t upperCornerY = be16toh(node->getUpperBounds().y);
-            uint16_t upperCornerZ = be16toh(node->getUpperBounds().z);
+            //std::cout << "Node ID: " << std::bitset<64>(pair.first) << std::endl;
+            //std::cout << "Depth: " << (int)node_depth << std::endl;
+            //std::cout << "Faces: " << faces.size() << std::endl;
 
-            uint16_t lowerCornerX = be16toh(node->getLowerBounds().x);
-            uint16_t lowerCornerY = be16toh(node->getLowerBounds().y);
-            uint16_t lowerCornerZ = be16toh(node->getLowerBounds().z);
+            glm::vec3 upper = node->getUpperBounds();
+            glm::vec3 lower = node->getLowerBounds();
             
             file.write(reinterpret_cast<const char*>(&node_depth), sizeof(node_depth));
             file.write(reinterpret_cast<const char*>(&id), sizeof(id));
             file.write(reinterpret_cast<const char*>(&n_faces), sizeof(n_faces));
 
-            file.write(reinterpret_cast<const char*>(&upperCornerX), sizeof(upperCornerX));
-            file.write(reinterpret_cast<const char*>(&upperCornerY), sizeof(upperCornerY));
-            file.write(reinterpret_cast<const char*>(&upperCornerZ), sizeof(upperCornerZ));
+            file.write(reinterpret_cast<const char*>(&upper.x), sizeof(upper.x));
+            file.write(reinterpret_cast<const char*>(&upper.y), sizeof(upper.y));
+            file.write(reinterpret_cast<const char*>(&upper.z), sizeof(upper.z));
 
-            file.write(reinterpret_cast<const char*>(&lowerCornerX), sizeof(lowerCornerX));
-            file.write(reinterpret_cast<const char*>(&lowerCornerY), sizeof(lowerCornerY));
-            file.write(reinterpret_cast<const char*>(&lowerCornerZ), sizeof(lowerCornerZ));
+            file.write(reinterpret_cast<const char*>(&lower.x), sizeof(lower.x));
+            file.write(reinterpret_cast<const char*>(&lower.y), sizeof(lower.y));
+            file.write(reinterpret_cast<const char*>(&lower.z), sizeof(lower.z));
 
             for (Face* face : faces) {
                 std::vector<uint32_t> indices = face->_indices;
-                std::cout << indices.size() << std::endl;
                 for (uint32_t index : indices) {
                     uint32_t swp_index = be32toh(index);
                     file.write(reinterpret_cast<const char*>(&swp_index), sizeof(swp_index));
@@ -545,36 +544,22 @@ void ENG_API Eng::Base::importOctree(const std::string& infilepath) {
         uint64_t node_id;
         uint32_t n_faces;
 
-        uint16_t upperCornerX;
-        uint16_t upperCornerY;
-        uint16_t upperCornerZ;
-
-        uint16_t lowerCornerX;
-        uint16_t lowerCornerY;
-        uint16_t lowerCornerZ;
+        float upperX, upperY, upperZ;
+        float lowerX, lowerY, lowerZ;
 
         file.read(reinterpret_cast<char*>(&node_depth), sizeof(node_depth));
         file.read(reinterpret_cast<char*>(&node_id), sizeof(node_id));
         file.read(reinterpret_cast<char*>(&n_faces), sizeof(n_faces));
 
-        file.read(reinterpret_cast<char*>(&upperCornerX), sizeof(upperCornerX));
-        file.read(reinterpret_cast<char*>(&upperCornerY), sizeof(upperCornerY));
-        file.read(reinterpret_cast<char*>(&upperCornerZ), sizeof(upperCornerZ));
-
-        file.read(reinterpret_cast<char*>(&lowerCornerX), sizeof(lowerCornerX));
-        file.read(reinterpret_cast<char*>(&lowerCornerY), sizeof(lowerCornerY));
-        file.read(reinterpret_cast<char*>(&lowerCornerZ), sizeof(lowerCornerZ));
+        file.read(reinterpret_cast<char*>(&upperX), sizeof(upperX));
+        file.read(reinterpret_cast<char*>(&upperY), sizeof(upperY));
+        file.read(reinterpret_cast<char*>(&upperZ), sizeof(upperZ));
+        file.read(reinterpret_cast<char*>(&lowerX), sizeof(lowerX));
+        file.read(reinterpret_cast<char*>(&lowerY), sizeof(lowerY));
+        file.read(reinterpret_cast<char*>(&lowerZ), sizeof(lowerZ));
 
         node_id = be64toh(node_id);
         n_faces = be32toh(n_faces);
-
-        upperCornerX = be16toh(upperCornerX);
-        upperCornerY = be16toh(upperCornerY);
-        upperCornerZ = be16toh(upperCornerZ);
-
-        lowerCornerX = be16toh(lowerCornerX);
-        lowerCornerY = be16toh(lowerCornerY);
-        lowerCornerZ = be16toh(lowerCornerZ);
 
         std::vector<std::vector<uint32_t>> faceIndices;
 
@@ -588,32 +573,36 @@ void ENG_API Eng::Base::importOctree(const std::string& infilepath) {
             faceIndices.push_back(indices);
         }
 
-        NodeData* data = new NodeData(node_id, node_depth, glm::vec3(upperCornerX, upperCornerY, upperCornerZ), glm::vec3(lowerCornerX, lowerCornerY, lowerCornerZ), faceIndices);
+        NodeData* data = new NodeData(node_id, node_depth, glm::vec3(upperX, upperY, upperZ), glm::vec3(lowerX, lowerY, lowerZ), faceIndices);
         nodes.push_back(data);
 
-        std::cout << "Node ID: " << std::bitset<64>(node_id) << std::endl;
-        std::cout << "Depth: " << (int)node_depth << std::endl;
-        std::cout << "Faces: " << n_faces << std::endl;
+        //std::cout << "Node ID: " << std::bitset<64>(node_id) << std::endl;
+        //std::cout << "Depth: " << (int)node_depth << std::endl;
+        //std::cout << "Faces: " << n_faces << std::endl;
     }
 
     std::cout << "Total nodes loaded: " << nodes.size() << std::endl;
 
     // Now rebuild the mesh and octree from the loaded data
 
-    std::string meshpath = infilepath.substr(infilepath.find_last_of("\\") + 1).append(meshName);
+    size_t lastSlash = infilepath.find_last_of("\\");
+    std::string directory = (lastSlash != std::string::npos)
+        ? infilepath.substr(0, lastSlash + 1)
+        : "";
+
+    std::string meshpath = directory + meshName;
 
     std::vector<Vertex*> outVertices;
-    std::unordered_map<std::tuple<unsigned int, unsigned int, unsigned int>, Face*> outFaces;
+    std::map<std::tuple<unsigned int, unsigned int, unsigned int>, Face*> outFaces;
     bool success = importFile(meshpath, outVertices, outFaces);
 
-    // Key: Parent ID, Depth -> Value: List of Octree Nodes with that parent
-    std::unordered_map<std::pair<uint64_t, uint8_t>, std::vector<OctreeNode*>> processedNodes;
+    // Key: Node ID, Depth -> Value: The Octree Node
+    std::map<std::pair<uint64_t, uint8_t>, OctreeNode*> parentlessNodes;
+    std::map<std::pair<uint64_t, uint8_t>, std::vector<OctreeNode*>> parentBuffer;
 
     // Populate processedNodes with all leaves of the octree
     for (NodeData* data : nodes) {
-
-        uint64_t parentId = data->id >> 3;
-        uint8_t currentId = data->id && 0b111;
+        uint8_t currentId = data->id & 0b111;
         
         OctreeNode* newNode = new OctreeNode(data->lowerCorner, data->upperCorner, data->depth, currentId);
         
@@ -624,18 +613,75 @@ void ENG_API Eng::Base::importOctree(const std::string& infilepath) {
 
         newNode->setFaces(nodeFaces);
 
-        processedNodes.emplace(std::make_pair(parentId, data->depth), newNode);
+        auto key = std::make_pair(data->id, data->depth);
+        parentlessNodes.emplace(key, newNode);
     }
 
-    // Create the parent nodes and clear any children assigned to them
-    OctreeNode* root;
+    // Reconstruct the rest of the octree
+    OctreeNode* root = nullptr;
 
-    while (!processedNodes.empty()) {
-        auto it = processedNodes.begin();
-        uint64_t parentId = it->first.first;
-        uint8_t depth = it->first.second;
+    while (!parentlessNodes.empty()) {
+        auto it = parentlessNodes.begin();
+        uint8_t currentId = it->first.first & 0b111;
+        uint64_t parentId = it->first.first >> 3;
+        uint8_t depth = it->first.second - 1;
+
+        std::pair<uint64_t, uint8_t> key = std::make_pair(parentId, depth);
+
+        if (parentlessNodes.size() == 1 && it->first.second == 0) {
+            root = it->second;
+            break;
+        }
+
+        if (it->first.second == 0)
+            continue;
+
+        parentBuffer[key].push_back(it->second);
+        parentlessNodes.erase(it);
+        if (parentBuffer[key].size() == 8) {
+            std::vector<OctreeNode*> children = parentBuffer[key];
+
+            glm::vec3 lowerCorner = children[0]->getLowerBounds();
+            glm::vec3 upperCorner = children[0]->getUpperBounds();
+
+            for (size_t i = 1; i < children.size(); i++) {
+                glm::vec3 childLower = children[i]->getLowerBounds();
+                glm::vec3 childUpper = children[i]->getUpperBounds();
+
+                lowerCorner.x = std::min(lowerCorner.x, childLower.x);
+                lowerCorner.y = std::min(lowerCorner.y, childLower.y);
+                lowerCorner.z = std::min(lowerCorner.z, childLower.z);
+
+                upperCorner.x = std::max(upperCorner.x, childUpper.x);
+                upperCorner.y = std::max(upperCorner.y, childUpper.y);
+                upperCorner.z = std::max(upperCorner.z, childUpper.z);
+            }
 
 
+            OctreeNode* newNode = new OctreeNode(lowerCorner, upperCorner, depth, currentId);
+            for (OctreeNode* child : children)
+                newNode->addChild(child);
+
+            parentlessNodes.emplace(key, newNode);
+            parentBuffer.erase(key);
+        }
+    }
+
+    if (root != nullptr) {
+
+        std::vector<Face*> meshFaces;
+        meshFaces.reserve(outFaces.size());
+
+        for (auto& pair : outFaces) {
+            meshFaces.push_back(pair.second);
+        }
+
+        outFaces.clear();
+
+        Mesh* mesh = new Mesh(meshFaces, outVertices, root);
+        mesh->setName(meshName);
+        std::cout << "[+] Mesh Loaded: " << mesh->getName() << std::endl;
+        addNodeTo(getCurrentScene(), mesh);
     }
 
     file.close();
