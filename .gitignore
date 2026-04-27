@@ -13,6 +13,8 @@ engine/obj
 test/obj
 engine/doc
 docs
+imgui.ini
+imgui*.ini
 
 # Cartelle di output
 bin/
