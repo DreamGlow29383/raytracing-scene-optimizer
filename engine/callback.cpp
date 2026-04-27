@@ -96,6 +96,9 @@ void DrawMenuBar() {
 				if (ImGui::MenuItem("Faces", nullptr, eng.getColoringMode() == 2)) {
 					eng.setColoringMode(2);
 				}
+				if (ImGui::MenuItem("Node", nullptr, eng.getColoringMode() == 3)) {
+					eng.setColoringMode(3);
+				}
 				ImGui::EndMenu();
 			}
 

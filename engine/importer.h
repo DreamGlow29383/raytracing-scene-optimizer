@@ -15,4 +15,4 @@
   * @param filepath The path to the file on disk.
   * @return A vector of pointers to the created Nodes (Meshes).
   */
-bool importFile(const std::string& filepath, std::vector<Vertex*>& outVertices, std::map<std::tuple<unsigned int, unsigned int, unsigned int>, Face*> &outFaces);
+bool importFile(const std::string& filepath, std::vector<Vertex*>& outVertices, std::vector<Face*> &outFaces);

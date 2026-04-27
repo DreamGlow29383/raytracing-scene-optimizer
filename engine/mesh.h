@@ -27,6 +27,9 @@ public:
     void render(glm::mat4 cameraInverse) override;
 
     OctreeNode* getOctreeRoot();
+    std::vector<Face*> getFaces() {
+        return _faces;
+    }
 
 private:
     std::vector<Vertex*> _vertices;
@@ -40,6 +43,7 @@ private:
     std::unordered_map<OctreeNode*, int> nodeIndexCounts;
     std::unordered_map<OctreeNode*, glm::vec3> depthColors;
     std::unordered_map<OctreeNode*, glm::vec3> faceColors;
+    std::unordered_map<OctreeNode*, glm::vec3> nodeColors;
 
     OctreeNode* rootNode;
 
@@ -49,4 +53,5 @@ private:
     void printOctreeHierarchy(OctreeNode* node, const std::string& prefix, bool isLast, bool isRoot);
     glm::vec3 computeDensityColor(size_t faceCount);
     glm::vec3 computeDepthColor(int depth);
+    glm::vec3 computeRandomColor(int id, int depth);
 };

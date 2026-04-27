@@ -54,7 +54,7 @@ int main(int argc, char *argv[])
 
 	int id = eng.createScene();
 	eng.setCurrentScene(id);
-	eng.setSceneAmbient(1.0f, 1.0f, 1.0f, 1.0f);
+	eng.setSceneAmbient(0.8f, 0.8f, 0.8f, 1.0f);
 
 	Eng::CameraConfig cameraConfig;
 	cameraConfig.type = Eng::CameraType::PERSPECTIVE;

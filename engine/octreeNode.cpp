@@ -27,6 +27,16 @@ OctreeNode::OctreeNode(std::vector<Vertex*> allVertices, std::vector<Face*> allF
     lowerBoundsCorner = lowerCorner;
     upperBoundsCorner = upperCorner;
 
+    const float EPSILON = 0.01f;
+
+    lowerBoundsCorner.x -= EPSILON;
+    lowerBoundsCorner.y -= EPSILON;
+    lowerBoundsCorner.z -= EPSILON;
+
+    upperBoundsCorner.x += EPSILON;
+    upperBoundsCorner.y += EPSILON;
+    upperBoundsCorner.z += EPSILON;
+
     float width = abs(upperBoundsCorner.x - lowerBoundsCorner.x);
     float height = abs(upperBoundsCorner.y - lowerBoundsCorner.y);
     float depth = abs(upperBoundsCorner.z - lowerBoundsCorner.z);

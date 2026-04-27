@@ -69,6 +69,7 @@ Mesh::Mesh(std::vector<Face*> faces, std::vector<Vertex*> vertices, OctreeNode* 
             nodeIndexCounts[node] = indices.size();
             faceColors[node] = computeDensityColor(node->getFaces().size());
             depthColors[node] = computeDepthColor(node->getDepth());
+            nodeColors[node] = computeRandomColor(node->getId(), node->getDepth());
         }
     }
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
@@ -113,10 +114,13 @@ void Mesh::render(glm::mat4 cameraInverse)
                 col = depthColors[node];
             if (eng.getColoringMode() == 2)
                 col = faceColors[node];
+            if (eng.getColoringMode() == 3)
+                col = nodeColors[node];
 
             // Set material properties instead of using glColor
             GLfloat material_diffuse[] = { col.r, col.g, col.b, 1.0f };
             glMaterialfv(GL_FRONT_AND_BACK, GL_DIFFUSE, material_diffuse);
+            glMaterialfv(GL_FRONT_AND_BACK, GL_AMBIENT, material_diffuse);
 
             glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, nodeIndexVBOs[node]);
             glDrawElements(GL_TRIANGLES, nodeIndexCounts[node], GL_UNSIGNED_INT, nullptr);
@@ -143,8 +147,8 @@ void Mesh::render(glm::mat4 cameraInverse)
             glDrawElements(GL_TRIANGLES, nodeIndexCounts[node], GL_UNSIGNED_INT, nullptr);
         }
     }
-
     */
+
     glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);  // restore default
 
     glDisableClientState(GL_VERTEX_ARRAY);
@@ -269,6 +273,15 @@ glm::vec3 Mesh::computeDepthColor(int depth)
     float frac = scaled - idx;
 
     return glm::mix(colors[idx], colors[idx + 1], frac);
+}
+
+glm::vec3 Mesh::computeRandomColor(int id, int depth)
+{
+    std::srand(id * 31 + depth * 97);
+    float r = (std::rand() % 256) / 255.0f;
+    float g = (std::rand() % 256) / 255.0f;
+    float b = (std::rand() % 256) / 255.0f;
+    return glm::vec3(r, g, b);
 }
 
 OctreeNode* Mesh::getOctreeRoot() {

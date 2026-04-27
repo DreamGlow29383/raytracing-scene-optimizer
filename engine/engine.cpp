@@ -329,25 +329,16 @@ void ENG_API Eng::Base::removeNode(int id) {
 
 int ENG_API Eng::Base::addNodeFromFile(int parent, const std::string& filepath) {
     std::vector<Vertex*> outVertices;
-    std::map<std::tuple<unsigned int, unsigned int, unsigned int>, Face*> outFaces;
+    std::vector<Face*> outFaces;
 
     bool success = importFile(filepath, outVertices, outFaces);
     std::string meshName = filepath.substr(filepath.find_last_of("\\") + 1);
 
     if (success) {
-        std::vector<Face*> meshFaces;
-        meshFaces.reserve(outFaces.size());
-
-        for (auto& pair : outFaces) {
-            meshFaces.push_back(pair.second);
-        }
-
-        outFaces.clear();
-
-        Mesh* mesh = new Mesh(meshFaces, outVertices);
+        Mesh* mesh = new Mesh(outFaces, outVertices);
         mesh->setName(meshName);
         std::cout << "[+] Mesh Loaded: " << mesh->getName() << std::endl;
-        std::cout << "[?] Faces: " << meshFaces.size() << std::endl;
+        std::cout << "[?] Faces: " << outFaces.size() << std::endl;
         addNodeTo(getCurrentScene()->getNode(parent), mesh);
         return mesh->getId();
     }
@@ -423,6 +414,7 @@ void ENG_API Eng::Base::exportOctree(const std::string& outfilepath) {
 
     Scene* scene = this->getCurrentScene();
     Mesh* mesh = dynamic_cast<Mesh*>(scene->getChild(2));
+    std::vector<Face*> mesh_faces = mesh->getFaces();
 
     std::string meshName = mesh ? mesh->getName() : "Unknown";
     uint8_t nameLength = static_cast<uint8_t>(meshName.length());
@@ -469,12 +461,13 @@ void ENG_API Eng::Base::exportOctree(const std::string& outfilepath) {
             file.write(reinterpret_cast<const char*>(&lower.y), sizeof(lower.y));
             file.write(reinterpret_cast<const char*>(&lower.z), sizeof(lower.z));
 
-            for (Face* face : faces) {
-                std::vector<uint32_t> indices = face->_indices;
-                for (uint32_t index : indices) {
-                    uint32_t swp_index = be32toh(index);
-                    file.write(reinterpret_cast<const char*>(&swp_index), sizeof(swp_index));
-                }
+            glm:
+
+            for (int i = 0; i < faces.size(); i++) {
+                auto it = std::find(mesh_faces.begin(), mesh_faces.end(), faces[i]);
+                uint32_t globalIndex = std::distance(mesh_faces.begin(), it);
+                uint32_t swp_index = be32toh(globalIndex);
+                file.write(reinterpret_cast<const char*>(&swp_index), sizeof(swp_index));
             }
         }
     }
@@ -494,7 +487,7 @@ struct NodeData {
     uint8_t depth;
     glm::vec3 upperCorner;
     glm::vec3 lowerCorner;
-    std::vector<std::vector<uint32_t>> faceIndices;
+    std::vector<uint32_t> faceIndices;
 };
 
 void ENG_API Eng::Base::importOctree(const std::string& infilepath) {
@@ -561,16 +554,12 @@ void ENG_API Eng::Base::importOctree(const std::string& infilepath) {
         node_id = be64toh(node_id);
         n_faces = be32toh(n_faces);
 
-        std::vector<std::vector<uint32_t>> faceIndices;
+        std::vector<uint32_t> faceIndices;
 
         for (uint32_t f = 0; f < n_faces; ++f) {
-            std::vector<uint32_t> indices;
-            for (int i = 0; i < 3; ++i) {
-                uint32_t index;
-                file.read(reinterpret_cast<char*>(&index), sizeof(index));
-                indices.push_back(be32toh(index));
-            }
-            faceIndices.push_back(indices);
+            uint32_t index;
+            file.read(reinterpret_cast<char*>(&index), sizeof(index));
+            faceIndices.push_back(be32toh(index));
         }
 
         NodeData* data = new NodeData(node_id, node_depth, glm::vec3(upperX, upperY, upperZ), glm::vec3(lowerX, lowerY, lowerZ), faceIndices);
@@ -593,7 +582,7 @@ void ENG_API Eng::Base::importOctree(const std::string& infilepath) {
     std::string meshpath = directory + meshName;
 
     std::vector<Vertex*> outVertices;
-    std::map<std::tuple<unsigned int, unsigned int, unsigned int>, Face*> outFaces;
+    std::vector<Face*> outFaces;
     bool success = importFile(meshpath, outVertices, outFaces);
 
     // Key: Node ID, Depth -> Value: The Octree Node
@@ -607,8 +596,8 @@ void ENG_API Eng::Base::importOctree(const std::string& infilepath) {
         OctreeNode* newNode = new OctreeNode(data->lowerCorner, data->upperCorner, data->depth, currentId);
         
         std::vector<Face*> nodeFaces;
-        for (std::vector<uint32_t> face : data->faceIndices) {
-            nodeFaces.push_back(outFaces.at(std::make_tuple(face.at(0), face.at(1), face.at(2))));
+        for (uint32_t face_id : data->faceIndices) {
+            nodeFaces.push_back(outFaces[face_id]);
         }
 
         newNode->setFaces(nodeFaces);
@@ -668,17 +657,7 @@ void ENG_API Eng::Base::importOctree(const std::string& infilepath) {
     }
 
     if (root != nullptr) {
-
-        std::vector<Face*> meshFaces;
-        meshFaces.reserve(outFaces.size());
-
-        for (auto& pair : outFaces) {
-            meshFaces.push_back(pair.second);
-        }
-
-        outFaces.clear();
-
-        Mesh* mesh = new Mesh(meshFaces, outVertices, root);
+        Mesh* mesh = new Mesh(outFaces, outVertices, root);
         mesh->setName(meshName);
         std::cout << "[+] Mesh Loaded: " << mesh->getName() << std::endl;
         addNodeTo(getCurrentScene(), mesh);
