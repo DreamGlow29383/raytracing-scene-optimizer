@@ -36,6 +36,7 @@ Mesh::Mesh(std::vector<Face*> faces, std::vector<Vertex*> vertices)
             nodeIndexCounts[node] = indices.size();
             faceColors[node] = computeDensityColor(node->getFaces().size());
             depthColors[node] = computeDepthColor(node->getDepth());
+            nodeColors[node] = computeRandomColor(node->getId(), node->getDepth());
         }
     }
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
