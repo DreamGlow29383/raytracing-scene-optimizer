@@ -31,6 +31,8 @@ public:
         return _faces;
     }
 
+    void updateColorVBO(int coloringMode);
+
 private:
     std::vector<Vertex*> _vertices;
     std::vector<Face*> _faces;
@@ -39,6 +41,18 @@ private:
     unsigned int indexVBO = 0;
     unsigned int normalVBO = 0;
 
+    unsigned int expandedVertexVBO = 0;
+    unsigned int expandedNormalVBO = 0;
+    unsigned int colorVBO = 0;
+    unsigned int unifiedIndexVBO = 0;
+    unsigned int unifiedIndexCount = 0;
+
+    struct NodeRange {
+        unsigned int start;
+        unsigned int count;
+    };
+    std::unordered_map<OctreeNode*, NodeRange> nodeRanges;
+
     std::unordered_map<OctreeNode*, unsigned int> nodeIndexVBOs;
     std::unordered_map<OctreeNode*, int> nodeIndexCounts;
     std::unordered_map<OctreeNode*, glm::vec3> depthColors;
@@ -46,8 +60,10 @@ private:
     std::unordered_map<OctreeNode*, glm::vec3> nodeColors;
 
     OctreeNode* rootNode;
+    std::vector<OctreeNode*> _leafNodes;
 
     void generateMesh(std::vector<Face*> faces, std::vector<Vertex*> vertices);
+    void buildExpandedBuffers();
 
     void renderOctree(OctreeNode* node);
     void printOctreeHierarchy(OctreeNode* node, const std::string& prefix, bool isLast, bool isRoot);

@@ -383,6 +383,15 @@ void ENG_API Eng::Base::bindSceneEvent(char key, int nodeId, KeyCallback func) {
     scene->bindEvent(key, event);
 }
 
+void ENG_API Eng::Base::setColoringMode(int mode) {
+    coloring_mode = mode;
+
+    Scene* scene = this->getCurrentScene();
+    Mesh* mesh = dynamic_cast<Mesh*>(scene->getChild(2));
+
+    mesh->updateColorVBO(coloring_mode);
+}
+
 std::vector<std::pair<uint64_t, OctreeNode*>> exportedNodes;
 void traverseOctree(uint64_t completeId, OctreeNode* node) {
     if (!node->hasChildren())

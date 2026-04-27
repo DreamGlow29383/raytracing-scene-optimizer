@@ -24,6 +24,7 @@ Mesh::Mesh(std::vector<Face*> faces, std::vector<Vertex*> vertices)
                 stack.push_back(child);
         }
         else if (node->hasFaces()) {
+            _leafNodes.push_back(node);
             std::vector<unsigned int> indices;
             for (Face* face : node->getFaces())
                 for (unsigned int idx : face->_indices)
@@ -40,6 +41,22 @@ Mesh::Mesh(std::vector<Face*> faces, std::vector<Vertex*> vertices)
         }
     }
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
+
+    std::vector<unsigned int> allIndices;
+    for (OctreeNode* node : _leafNodes) {
+        for (Face* face : node->getFaces()) {
+            for (unsigned int idx : face->_indices) {
+                allIndices.push_back(idx);
+            }
+        }
+    }
+    glGenBuffers(1, &unifiedIndexVBO);
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, unifiedIndexVBO);
+    glBufferData(GL_ELEMENT_ARRAY_BUFFER, allIndices.size() * sizeof(unsigned int), allIndices.data(), GL_STATIC_DRAW);
+    unifiedIndexCount = allIndices.size();
+
+    buildExpandedBuffers();
+    updateColorVBO(0);
 }
 
 Mesh::Mesh(std::vector<Face*> faces, std::vector<Vertex*> vertices, OctreeNode* octreeRoot) {
@@ -58,6 +75,7 @@ Mesh::Mesh(std::vector<Face*> faces, std::vector<Vertex*> vertices, OctreeNode* 
                 stack.push_back(child);
         }
         else if (node->hasFaces()) {
+            _leafNodes.push_back(node);
             std::vector<unsigned int> indices;
             for (Face* face : node->getFaces())
                 for (unsigned int idx : face->_indices)
@@ -74,11 +92,19 @@ Mesh::Mesh(std::vector<Face*> faces, std::vector<Vertex*> vertices, OctreeNode* 
         }
     }
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
+
+    buildExpandedBuffers();
+    updateColorVBO(0);
 }
 
 Mesh::~Mesh()
 {
-
+    glDeleteBuffers(1, &vertexVBO);
+    glDeleteBuffers(1, &normalVBO);
+    glDeleteBuffers(1, &expandedVertexVBO);
+    glDeleteBuffers(1, &expandedNormalVBO);
+    glDeleteBuffers(1, &colorVBO);
+    glDeleteBuffers(1, &unifiedIndexVBO);
 }
 
 void Mesh::render(glm::mat4 cameraInverse)
@@ -88,69 +114,37 @@ void Mesh::render(glm::mat4 cameraInverse)
     glMatrixMode(GL_MODELVIEW);
     glLoadMatrixf(glm::value_ptr(cameraInverse * this->getWC()));
 
-    glBindBuffer(GL_ARRAY_BUFFER, vertexVBO);
+    glBindBuffer(GL_ARRAY_BUFFER, expandedVertexVBO);
     glVertexPointer(3, GL_FLOAT, 0, nullptr);
     glEnableClientState(GL_VERTEX_ARRAY);
 
-    glBindBuffer(GL_ARRAY_BUFFER, normalVBO);
+    glBindBuffer(GL_ARRAY_BUFFER, expandedNormalVBO);
     glNormalPointer(GL_FLOAT, 0, nullptr);
     glEnableClientState(GL_NORMAL_ARRAY);
 
-    // --- Pass 1: solid fill ---
+    if (eng.getColoringMode() != 0) {
+        glBindBuffer(GL_ARRAY_BUFFER, colorVBO);
+        glColorPointer(3, GL_FLOAT, 0, nullptr);
+        glEnableClientState(GL_COLOR_ARRAY);
+
+        glDisable(GL_LIGHTING);
+    }
+
     glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
-    glEnable(GL_POLYGON_OFFSET_FILL);
-    glPolygonOffset(1.0f, 1.0f);
 
-    std::vector<OctreeNode*> stack = { rootNode };
-    while (!stack.empty()) {
-        OctreeNode* node = stack.back();
-        stack.pop_back();
-        if (node->hasChildren()) {
-            for (OctreeNode* child : node->getChildren())
-                stack.push_back(child);
-        }
-        else if (node->hasFaces()) {
-            glm::vec3 col = glm::vec3(0.8, 0.8, 0.8);
-            if (eng.getColoringMode() == 1)
-                col = depthColors[node];
-            if (eng.getColoringMode() == 2)
-                col = faceColors[node];
-            if (eng.getColoringMode() == 3)
-                col = nodeColors[node];
-
-            // Set material properties instead of using glColor
-            GLfloat material_diffuse[] = { col.r, col.g, col.b, 1.0f };
-            glMaterialfv(GL_FRONT_AND_BACK, GL_DIFFUSE, material_diffuse);
-            glMaterialfv(GL_FRONT_AND_BACK, GL_AMBIENT, material_diffuse);
-
-            glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, nodeIndexVBOs[node]);
-            glDrawElements(GL_TRIANGLES, nodeIndexCounts[node], GL_UNSIGNED_INT, nullptr);
-        }
+    if (eng.getColoringMode() == 0) {
+        GLfloat material_diffuse[] = { 0.8f, 0.8f, 0.8f, 1.0f };
+        glMaterialfv(GL_FRONT_AND_BACK, GL_DIFFUSE, material_diffuse);
+        glMaterialfv(GL_FRONT_AND_BACK, GL_AMBIENT, material_diffuse);
     }
-    glDisable(GL_POLYGON_OFFSET_FILL);
 
-    /*
-    // --- Pass 2: edges only ---
-    glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
-    glLineWidth(1.0f);
-    glColor3f(0.0f, 0.0f, 0.0f);
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, unifiedIndexVBO);
+    glDrawElements(GL_TRIANGLES, unifiedIndexCount, GL_UNSIGNED_INT, nullptr);
 
-    stack = { rootNode };
-    while (!stack.empty()) {
-        OctreeNode* node = stack.back();
-        stack.pop_back();
-        if (node->hasChildren()) {
-            for (OctreeNode* child : node->getChildren())
-                stack.push_back(child);
-        }
-        else if (node->hasFaces()) {
-            glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, nodeIndexVBOs[node]);
-            glDrawElements(GL_TRIANGLES, nodeIndexCounts[node], GL_UNSIGNED_INT, nullptr);
-        }
+    if (eng.getColoringMode() != 0) {
+        glDisableClientState(GL_COLOR_ARRAY);
+        glEnable(GL_LIGHTING);
     }
-    */
-
-    glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);  // restore default
 
     glDisableClientState(GL_VERTEX_ARRAY);
     glDisableClientState(GL_NORMAL_ARRAY);
@@ -161,19 +155,6 @@ void Mesh::render(glm::mat4 cameraInverse)
 
 void Mesh::renderOctree(OctreeNode* root)
 {
-    std::vector<OctreeNode*> stack = { root };
-    std::vector<OctreeNode*> leafNodes;
-
-    while (!stack.empty()) {
-        OctreeNode* node = stack.back();
-        stack.pop_back();
-        if (node->hasFaces())
-            leafNodes.push_back(node);
-        if (node->hasChildren())
-            for (OctreeNode* child : node->getChildren())
-                stack.push_back(child);
-    }
-
     glPushAttrib(GL_ALL_ATTRIB_BITS);
     glDisable(GL_LIGHTING);
     glLineWidth(2.0f);
@@ -186,7 +167,7 @@ void Mesh::renderOctree(OctreeNode* root)
 
     glColor3f(1.0f, 0.0f, 0.0f);
     glBegin(GL_LINES);
-    for (OctreeNode* node : leafNodes) {
+    for (OctreeNode* node : _leafNodes) {
         if (node->getFaces().size() >= 10) continue;
         glm::vec3 mn = node->getLowerBounds();
         glm::vec3 mx = node->getUpperBounds();
@@ -203,7 +184,7 @@ void Mesh::renderOctree(OctreeNode* root)
 
     glColor3f(0.0f, 1.0f, 0.0f);
     glBegin(GL_LINES);
-    for (OctreeNode* node : leafNodes) {
+    for (OctreeNode* node : _leafNodes) {
         if (node->getFaces().size() < 10) continue;
         glm::vec3 mn = node->getLowerBounds();
         glm::vec3 mx = node->getUpperBounds();
@@ -321,4 +302,74 @@ void Mesh::generateMesh(std::vector<Face*> faces, std::vector<Vertex*> vertices)
 
     delete[] flatVertices;
     delete[] flatNormals;
+}
+
+void Mesh::updateColorVBO(int coloringMode) {
+    std::vector<float> colors(unifiedIndexCount * 3, 0.8f);
+
+    if (coloringMode != 0) {
+        for (OctreeNode* node : _leafNodes) {
+            glm::vec3 col = (coloringMode == 1) ? depthColors[node]
+                : (coloringMode == 2) ? faceColors[node]
+                : nodeColors[node];
+            const NodeRange& r = nodeRanges[node];
+            for (unsigned int i = r.start; i < r.start + r.count; i++) {
+                colors[i * 3] = col.r;
+                colors[i * 3 + 1] = col.g;
+                colors[i * 3 + 2] = col.b;
+            }
+        }
+    }
+
+    if (colorVBO == 0) glGenBuffers(1, &colorVBO);
+    glBindBuffer(GL_ARRAY_BUFFER, colorVBO);
+    glBufferData(GL_ARRAY_BUFFER, colors.size() * sizeof(float), colors.data(), GL_STATIC_DRAW);
+    glBindBuffer(GL_ARRAY_BUFFER, 0);
+}
+
+void Mesh::buildExpandedBuffers() {
+    std::vector<float> exVertices;
+    std::vector<float> exNormals;
+    std::vector<unsigned int> allIndices;
+
+    exVertices.reserve(_faces.size() * 3 * 3);
+    exNormals.reserve(_faces.size() * 3 * 3);
+    allIndices.reserve(_faces.size() * 3);
+
+    unsigned int cursor = 0;
+
+    for (OctreeNode* node : _leafNodes) {
+        unsigned int rangeStart = cursor;
+
+        for (Face* face : node->getFaces()) {
+            for (unsigned int oldIdx : face->_indices) {
+                Vertex* v = _vertices[oldIdx];
+                exVertices.push_back(v->x);
+                exVertices.push_back(v->y);
+                exVertices.push_back(v->z);
+                exNormals.push_back(v->nx);
+                exNormals.push_back(v->ny);
+                exNormals.push_back(v->nz);
+                allIndices.push_back(cursor++);
+            }
+        }
+
+        nodeRanges[node] = { rangeStart, cursor - rangeStart };
+    }
+
+    glGenBuffers(1, &expandedVertexVBO);
+    glBindBuffer(GL_ARRAY_BUFFER, expandedVertexVBO);
+    glBufferData(GL_ARRAY_BUFFER, exVertices.size() * sizeof(float), exVertices.data(), GL_STATIC_DRAW);
+
+    glGenBuffers(1, &expandedNormalVBO);
+    glBindBuffer(GL_ARRAY_BUFFER, expandedNormalVBO);
+    glBufferData(GL_ARRAY_BUFFER, exNormals.size() * sizeof(float), exNormals.data(), GL_STATIC_DRAW);
+
+    glGenBuffers(1, &unifiedIndexVBO);
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, unifiedIndexVBO);
+    glBufferData(GL_ELEMENT_ARRAY_BUFFER, allIndices.size() * sizeof(unsigned int), allIndices.data(), GL_STATIC_DRAW);
+    unifiedIndexCount = allIndices.size();
+
+    glBindBuffer(GL_ARRAY_BUFFER, 0);
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
 }

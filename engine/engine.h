@@ -293,7 +293,7 @@ public:
     void setShowNodeBoundaries(bool show) { show_node_boundaries = show; }
     bool getShowNodeBoundaries() const { return show_node_boundaries; }
 
-    void setColoringMode(int mode) { coloring_mode = mode; }
+    void setColoringMode(int mode);
     int getColoringMode() const { return coloring_mode; }
 
     void setShowColoringSubmenu(bool show) { show_coloring_submenu = show; }
