@@ -2,8 +2,8 @@
  * @file		main.cpp
  * @brief	Client application (that uses the graphics engine)
  *
- * @author	Ruben Barros (C) SUPSI [ruben.barros@supsi.ch]
- * @author	Sebastiano Piubellini (C) SUPSI [sebastiano.piubellin@supsi.ch]
+ * @author	Ruben Barros (C) SUPSI [ruben.barros@student.supsi.ch]
+ * @author	Sebastiano Piubellini (C) SUPSI [sebastiano.piubellin@student.supsi.ch]
  */
 
 #include "engine.h"
@@ -15,6 +15,9 @@
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/type_ptr.hpp>
 #include <glm/gtc/quaternion.hpp>
+
+#define GLM_ENABLE_EXPERIMENTAL
+#include <glm/gtx/intersect.hpp>
 
 
 #if defined(_WIN32)

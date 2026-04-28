@@ -89,6 +89,7 @@ void Mesh::render(glm::mat4 cameraInverse)
 {
 	glMatrixMode(GL_MODELVIEW);
 	glLoadMatrixf(glm::value_ptr(cameraInverse * this->getWC()));
+	Eng::Base& eng = Eng::Base::getInstance();
 
 	glBindBuffer(GL_ARRAY_BUFFER, vertexVBO);
 	glVertexPointer(3, GL_FLOAT, 0, nullptr);
@@ -106,38 +107,6 @@ void Mesh::render(glm::mat4 cameraInverse)
 
 	std::vector<OctreeNode*> stack = { rootNode };
 
-	// Check if ray passes through
-	Eng::Base& eng = Eng::Base::getInstance();
-	Scene* scene = eng.getCurrentScene();
-
-	glm::vec3 rayStart = scene->getRayStart();
-	glm::vec3 rayEnd = scene->getRayEnd();
-
-	Vertex* rayStartVertex = new Vertex();
-	rayStartVertex->x = rayStart.x;
-	rayStartVertex->y = rayStart.y;
-	rayStartVertex->z = rayStart.z;
-	rayStartVertex->nx = 0.0f;
-	rayStartVertex->ny = 0.0f;
-	rayStartVertex->nz = 0.0f;
-	rayStartVertex->u = 0.0f;
-	rayStartVertex->v = 0.0f;
-	Vertex* rayEndVertex = new Vertex();
-	rayEndVertex->x = rayEnd.x;
-	rayEndVertex->y = rayEnd.y;
-	rayEndVertex->z = rayEnd.z;
-	rayEndVertex->nx = 0.0f;
-	rayEndVertex->ny = 0.0f;
-	rayEndVertex->nz = 0.0f;
-	rayEndVertex->u = 0.0f;
-	rayEndVertex->v = 0.0f;
-
-	// Degenerate triangle used to check cube-ray collision
-	Face* tmpTriangle = new Face();
-	tmpTriangle->_vertices.push_back(rayStartVertex);
-	tmpTriangle->_vertices.push_back(rayEndVertex);
-	tmpTriangle->_vertices.push_back(rayEndVertex);
-
 	while (!stack.empty()) {
 		OctreeNode* node = stack.back();
 		stack.pop_back();
@@ -145,14 +114,27 @@ void Mesh::render(glm::mat4 cameraInverse)
 			for (OctreeNode* child : node->getChildren())
 				stack.push_back(child);
 		}
-		// cube-ray collision check
-		else if (node->hasFaces() && node->check(tmpTriangle)) {
-			glm::vec3& col = nodeColors[node];
-			glColor3f(col.r, col.g, col.b);
-			glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, nodeIndexVBOs[node]);
-			glDrawElements(GL_TRIANGLES, nodeIndexCounts[node], GL_UNSIGNED_INT, nullptr);
+		else if (node->hasFaces()) {
+			for (Face* f : node->getFaces()) {
+				// line-plane intersection check
+				if (eng.rayIntersectsFace(f)) {
+					toRender.push_back(f);
+					colorType.push_back(node);
+				}
+			}
 		}
 	}
+
+	for (int i = 0; i < toRender.size(); i++) {
+		glm::vec3& col = nodeColors[colorType[i]];
+		glBegin(GL_TRIANGLES);
+		glColor3f(col.r, col.g, col.b);
+		glVertex3f(toRender[i]->_vertices[0]->x, toRender[i]->_vertices[0]->y, toRender[i]->_vertices[0]->z);
+		glVertex3f(toRender[i]->_vertices[1]->x, toRender[i]->_vertices[1]->y, toRender[i]->_vertices[1]->z);
+		glVertex3f(toRender[i]->_vertices[2]->x, toRender[i]->_vertices[2]->y, toRender[i]->_vertices[2]->z);
+		glEnd();
+	}
+
 	glDisable(GL_POLYGON_OFFSET_FILL);
 
 	// --- Pass 2: edges only ---

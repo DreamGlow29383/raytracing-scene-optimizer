@@ -4,6 +4,13 @@
 #include "scene.h"
 #include <GL/freeglut.h>
 #include <iostream>
+#include <cmath>
+#include <limits>
+#include "face.h"
+
+
+
+const float EPSILON = 0.000001f;
 
 void castRay(int mouseX, int mouseY) {
 	Eng::Base& eng = Eng::Base::getInstance();
@@ -44,4 +51,11 @@ void castRay(int mouseX, int mouseY) {
 	std::cout << "rayEnd: (" << rayEnd.x << ", " << rayEnd.y << ", " << rayEnd.z << ")" << std::endl;
 
 	scene->setRay(rayStart, rayEnd);
+}
+
+// Helper: Subtract two vertices
+void subtractVertices(Vertex* a, Vertex* b, float& rx, float& ry, float& rz) {
+   rx = a->x - b->x;
+   ry = a->y - b->y;
+   rz = a->z - b->z;
 }

@@ -8,6 +8,11 @@
 #include "importer.h"
 #include "frame_event.h"
 
+#define GLM_ENABLE_EXPERIMENTAL
+#include <glm/gtx/intersect.hpp>
+
+#include <chrono>
+#include <thread>
 #include <iostream>   
 #include <source_location>
 #include <FreeImage.h>
@@ -73,7 +78,7 @@ bool ENG_API Eng::Base::init(int argc, char* argv[])
         return false;
     }
 
-    glutInitDisplayMode(GLUT_RGB | GLUT_DOUBLE | GLUT_DEPTH | GLUT_STENCIL);
+    glutInitDisplayMode(GLUT_RGB | GLUT_DOUBLE | GLUT_DEPTH | GLUT_STENCIL | GLUT_MULTISAMPLE);
     
     glutInit(&argc, argv);
 
@@ -99,6 +104,8 @@ bool ENG_API Eng::Base::init(int argc, char* argv[])
     glutSpecialFunc(specialCallback);
     glutMouseFunc(mouseCallback);
 
+    glutSetOption(GLUT_MULTISAMPLE, 8);
+    glEnable(GL_MULTISAMPLE); // enable anti-aliasing
     glEnable(GL_DEPTH_TEST);
     glEnable(GL_LIGHTING);
     glEnable(GL_NORMALIZE);
@@ -156,7 +163,7 @@ int ENG_API Eng::Base::createScene()
     if (currentSceneId == -1) {
         currentSceneId = scene->getId();
     }
-
+    
     std::cout << "[+] Scene created with ID: " << scene->getId() << std::endl;
     return scene->getId();
 }
@@ -397,3 +404,106 @@ void ENG_API Eng::Base::exportOctree(const std::string& outfilepath) {
 
     file.close();
 }
+
+void ENG_API Eng::Base::castRay(int mouseX, int mouseY) {
+   Eng::Base& eng = Eng::Base::getInstance();
+   Scene* scene = eng.getCurrentScene();
+   Camera* camera = scene->getCurrentCamera();
+   Eng::CameraConfig cameraConfig = camera->getConfig();
+
+   int viewport[4];
+   glGetIntegerv(GL_VIEWPORT, viewport);
+
+   glm::mat4 projMatrix = camera->getProj();
+   glm::mat4 viewMatrix = glm::inverse(camera->getTransform());
+
+   GLdouble winX = (GLdouble)mouseX;
+   GLdouble winY = (GLdouble)viewport[3] - (GLdouble)mouseY;
+
+   double modelArray[16];
+   double projArray[16];
+
+   for (int i = 0; i < 16; i++) {
+      modelArray[i] = viewMatrix[i / 4][i % 4];
+      projArray[i] = projMatrix[i / 4][i % 4];
+   }
+
+   GLdouble nearX, nearY, nearZ;
+   gluUnProject(winX, winY, 0.0f, modelArray, projArray, viewport, &nearX, &nearY, &nearZ);
+
+   GLdouble farX, farY, farZ;
+   gluUnProject(winX, winY, 1.0f, modelArray, projArray, viewport, &farX, &farY, &farZ);
+
+   glm::vec3 rayStart = glm::vec3((GLfloat)nearX, (GLfloat)nearY, (GLfloat)nearZ);
+   glm::vec3 rayEnd = glm::vec3((GLfloat)farX, (GLfloat)farY, (GLfloat)farZ);
+
+   std::cout << "rayStart: (" << rayStart.x << ", " << rayStart.y << ", " << rayStart.z << ")" << std::endl;
+   std::cout << "rayEnd: (" << rayEnd.x << ", " << rayEnd.y << ", " << rayEnd.z << ")" << std::endl;
+
+   scene->setRay(rayStart, rayEnd);
+}
+
+// does not work now
+void ENG_API Eng::Base::castRaysRandom(int n) {
+   std::srand(time(NULL));
+   int x;
+   int y;
+   int viewport[4];
+   glGetIntegerv(GL_VIEWPORT, viewport);
+
+   for (int i = 0; i < n; i++) {
+      x = std::rand() % viewport[2];
+      y = rand() % viewport[3];
+      castRay(x, y);
+      glutPostRedisplay();
+      std::this_thread::sleep_for(std::chrono::milliseconds(50));
+   }
+}
+
+bool ENG_API Eng::Base::rayIntersectsFace(Face* face) {
+
+   Scene* scene = getCurrentScene();
+
+   glm::vec3 rayStart = scene->getRayStart();
+   glm::vec3 rayEnd = scene->getRayEnd();
+
+   Vertex* rayStartVertex = new Vertex();
+   rayStartVertex->x = rayStart.x;
+   rayStartVertex->y = rayStart.y;
+   rayStartVertex->z = rayStart.z;
+
+   Vertex* rayEndVertex = new Vertex();
+   rayEndVertex->x = rayEnd.x;
+   rayEndVertex->y = rayEnd.y;
+   rayEndVertex->z = rayEnd.z;
+   
+      // Ray origin and direction
+      glm::vec3 orig(rayStart.x, rayStart.y, rayStart.z);
+      glm::vec3 dir(
+         rayEnd.x - rayStart.x,
+         rayEnd.y - rayStart.y,
+         rayEnd.z - rayStart.z
+      );
+
+      glm::vec3 intersectPos;
+
+      Vertex* v0 = face->_vertices[0];
+      Vertex* v1 = face->_vertices[1];
+      Vertex* v2 = face->_vertices[2];
+
+      // Convert to glm::vec3
+      glm::vec3 vert0(v0->x, v0->y, v0->z);
+      glm::vec3 vert1(v1->x, v1->y, v1->z);
+      glm::vec3 vert2(v2->x, v2->y, v2->z);
+
+      // Check intersection
+      if (intersectLineTriangle(orig, dir, vert0, vert1, vert2, intersectPos)) {
+         // check if intersection is within ray segment (0 <= t <= 1)
+         float t = glm::length(intersectPos - orig) / glm::length(dir);
+         if (t >= 0 && t <= 1) {
+            
+            return true;
+         }
+      }
+      return false;
+   }

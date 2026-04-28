@@ -117,20 +117,35 @@ public:
 
 	// Ray tracing simulation
 	void setRay(glm::vec3 start, glm::vec3 end) {
-		_rayStart = start;
-		_rayEnd = end;
+		_rayStart.push_back(start);
+		_rayEnd.push_back(end);
 		_showRay = true;
 	}
-	void clearRay() { _showRay = false; }
+	void clearRay() {
+		_showRay = false;
+		_rayStart.clear();
+		_rayEnd.clear();
+	}
 	bool hasRay() const { return _showRay; }
-	glm::vec3 getRayStart() const { return _rayStart; }
-	glm::vec3 getRayEnd() const { return _rayEnd; }
 
+	glm::vec3 getRayStart() const {
+		if (_rayStart.empty()) {
+			return glm::vec3(0.0f);
+		}
+		return _rayStart.back();
+	}
+
+	glm::vec3 getRayEnd() const {
+		if (_rayEnd.empty()) {
+			return glm::vec3(0.0f);
+		}
+		return _rayEnd.back();
+	}
 private:
 
 	bool _showRay = false;
-	glm::vec3 _rayStart;
-	glm::vec3 _rayEnd;
+	std::vector<glm::vec3> _rayStart;
+	std::vector<glm::vec3> _rayEnd;
 
 	glm::vec4 _ambient;
 	std::map<int, Node*> _nodes;

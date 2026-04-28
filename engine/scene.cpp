@@ -136,8 +136,11 @@ void Scene::render(glm::mat4 cameraInverse) {
        glLineWidth(1.0f);
        glBegin(GL_LINES);
        glColor3f(1.0f, 0.0f, 0.0f);
-       glVertex3f(_rayStart.x, _rayStart.y, _rayStart.z);
-       glVertex3f(_rayEnd.x, _rayEnd.y, _rayEnd.z);
+       for (int i = 0; i < _rayStart.size(); i++)
+       {
+          glVertex3f(_rayStart[i].x, _rayStart[i].y, _rayStart[i].z);
+          glVertex3f(_rayEnd[i].x, _rayEnd[i].y, _rayEnd[i].z);
+       }
        glEnd();
        glEnable(GL_LIGHTING);
     }

@@ -3,8 +3,7 @@
  * @brief	Graphics engine main include file
  *
  * @author	Ruben Barros (C) SUPSI [ruben.barros@student.supsi.ch]
- * @author	Lorenzo Vanina (C) SUPSI [lorenzo.vanina@student.supsi.ch]
- * @author	Davide Villa (C) SUPSI [davide.villa@student.supsi.ch]
+ * @author	Sebastiano Piubellini (C) SUPSI [sebastiano.piubellin@student.supsi.ch]
  */
 
 #pragma once
@@ -14,6 +13,7 @@
 #include <string>
 #include <functional>
 #include <glm/glm.hpp>
+#include "face.h"
 
 class Node;
 class Scene;
@@ -287,6 +287,22 @@ public:
 
     void exportOctree(const std::string& outfilepath);
 
+    void castRay(int x, int y);
+
+    void castRaysRandom(int n);
+
+    bool rayIntersectsFace(Face* face);
+
+    void setRayIntersectsFaceFlag() {
+       rayIntersectsFaceFlag = true;
+    }
+    void resetRayIntersectsFaceFlag() {
+       rayIntersectsFaceFlag = false;
+    }
+    bool getRayIntersectsFaceFlag() {
+       return rayIntersectsFaceFlag;
+    }
+
 private:
     struct Reserved;
     std::unique_ptr<Reserved> reserved;
@@ -295,6 +311,7 @@ private:
     int nextSceneId = 0;
     int currentSceneId = -1;
     int windowId;
+    bool rayIntersectsFaceFlag;
 
     void addNode(Node* node);
     void addNodeTo(Node* parent, Node* node);
