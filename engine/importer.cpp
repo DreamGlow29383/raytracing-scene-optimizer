@@ -26,6 +26,7 @@ bool importFile(const std::string& filepath, std::vector<Vertex*>& outVertices, 
         return false;
     }
 
+    std::cout << "Number of meshes: " << scene->mNumMeshes << std::endl;
     for (unsigned int i = 0; i == 0 /*< scene->mNumMeshes*/; i++)
     {
         const aiMesh* ai_mesh = scene->mMeshes[i];
@@ -75,6 +76,7 @@ bool importFile(const std::string& filepath, std::vector<Vertex*>& outVertices, 
 
             face->_indices = indices;
             face->_vertices = faceVertices;
+            face->_id = j;
 
             outFaces.push_back(face);;
         }

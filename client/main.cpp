@@ -59,7 +59,7 @@ int main(int argc, char *argv[])
 	Eng::CameraConfig cameraConfig;
 	cameraConfig.type = Eng::CameraType::PERSPECTIVE;
 	cameraConfig.fov = glm::radians(45.0f);
-	cameraConfig.nearPlane = 1.0f;
+	cameraConfig.nearPlane = 0.1f;
 	cameraConfig.farPlane = 100.0f;
 	int cameraId = eng.addNodeCamera(cameraConfig);
 	glm::mat4 cameraPos = glm::translate(glm::mat4(1.0f), glm::vec3(0.0f, 3.0f, 5.0f));
@@ -133,7 +133,7 @@ void moveCameraEvent(int nodeId, float deltaTime, glm::mat4 nodeTransform) {
 	if (cameraKeys['w']) {
 		glm::vec3 toTarget = cameraTarget - cameraPos;
 		float distance = glm::length(toTarget);
-		if (distance > 2.0f) {
+		if (distance > 0.5f) {
 			glm::vec3 direction = glm::normalize(toTarget);
 			cameraPos += direction * movementSpeed * deltaTime;
 		}

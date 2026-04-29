@@ -92,6 +92,7 @@
     <ClCompile Include="..\dependencies\imgui\imgui_draw.cpp" />
     <ClCompile Include="..\dependencies\imgui\imgui_tables.cpp" />
     <ClCompile Include="..\dependencies\imgui\imgui_widgets.cpp" />
+    <ClCompile Include="byte_util.cpp" />
     <ClCompile Include="face.cpp" />
     <ClCompile Include="frame_event.cpp" />
     <ClCompile Include="callback.cpp" />
@@ -110,6 +111,7 @@
     <ClCompile Include="scene.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="byte_util.h" />
     <ClInclude Include="face.h" />
     <ClInclude Include="frame_event.h" />
     <ClInclude Include="callback.h" />

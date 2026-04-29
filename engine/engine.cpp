@@ -7,6 +7,7 @@
 #include "camera.h"
 #include "importer.h"
 #include "frame_event.h"
+#include "byte_util.h"
 
 #include <iostream>   
 #include <source_location>
@@ -14,6 +15,8 @@
 #include <fstream>
 #include <utility>
 #include <bitset>
+#include <chrono>
+#include <filesystem>
 
 #include <GL/glew.h>
 #include <GL/freeglut.h>
@@ -412,14 +415,16 @@ void ENG_API Eng::Base::exportOctree(const std::string& outfilepath) {
         throw std::runtime_error("Failed to open file: " + outfilepath);
     }
 
+    std::vector<std::byte> fileData;
+
     const uint32_t magic = be32toh(0x4F435452); // "OCTR" in hex
-    file.write(reinterpret_cast<const char*>(&magic), sizeof(magic));
+    pushBytes(fileData, magic);
 
     const uint8_t version = 1;
-    file.write(reinterpret_cast<const char*>(&version), sizeof(version));
+    pushBytes(fileData, version);
 
     const uint8_t max_depth = 10;
-    file.write(reinterpret_cast<const char*>(&max_depth), sizeof(max_depth));
+    pushBytes(fileData, max_depth);
 
     Scene* scene = this->getCurrentScene();
     Mesh* mesh = dynamic_cast<Mesh*>(scene->getChild(2));
@@ -428,13 +433,13 @@ void ENG_API Eng::Base::exportOctree(const std::string& outfilepath) {
     std::string meshName = mesh ? mesh->getName() : "Unknown";
     uint8_t nameLength = static_cast<uint8_t>(meshName.length());
 
-    file.write(reinterpret_cast<const char*>(&nameLength), sizeof(nameLength));
-    file.write(meshName.c_str(), meshName.length());
+    pushBytes(fileData, nameLength);
+    pushString(fileData, meshName);
 
     const uint8_t padding = (4 - (meshName.length() % 4)) % 4;
     for (uint8_t i = 0; i < padding; ++i) {
         const char zero = 0;
-        file.write(&zero, sizeof(zero));
+        pushBytes(fileData, zero);
     }
 
     // Write Octree Data
@@ -442,7 +447,14 @@ void ENG_API Eng::Base::exportOctree(const std::string& outfilepath) {
         OctreeNode* root = mesh->getOctreeRoot();
 
         exportedNodes.clear();
+
+        auto start = std::chrono::high_resolution_clock::now();
+
         traverseOctree(root->getId(), root);
+
+        auto end = std::chrono::high_resolution_clock::now();
+        auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(end - start);
+        std::cout << "traverseOctree took: " << duration.count() << " ms" << std::endl;
 
         for (std::pair<uint64_t, OctreeNode*> pair : exportedNodes) {
             uint64_t id = be64toh(pair.first);
@@ -458,31 +470,30 @@ void ENG_API Eng::Base::exportOctree(const std::string& outfilepath) {
             glm::vec3 upper = node->getUpperBounds();
             glm::vec3 lower = node->getLowerBounds();
             
-            file.write(reinterpret_cast<const char*>(&node_depth), sizeof(node_depth));
-            file.write(reinterpret_cast<const char*>(&id), sizeof(id));
-            file.write(reinterpret_cast<const char*>(&n_faces), sizeof(n_faces));
+            pushBytes(fileData, node_depth);
+            pushBytes(fileData, id);
+            pushBytes(fileData, n_faces);
 
-            file.write(reinterpret_cast<const char*>(&upper.x), sizeof(upper.x));
-            file.write(reinterpret_cast<const char*>(&upper.y), sizeof(upper.y));
-            file.write(reinterpret_cast<const char*>(&upper.z), sizeof(upper.z));
+            pushBytes(fileData, upper.x);
+            pushBytes(fileData, upper.y);
+            pushBytes(fileData, upper.z);
 
-            file.write(reinterpret_cast<const char*>(&lower.x), sizeof(lower.x));
-            file.write(reinterpret_cast<const char*>(&lower.y), sizeof(lower.y));
-            file.write(reinterpret_cast<const char*>(&lower.z), sizeof(lower.z));
+            pushBytes(fileData, lower.x);
+            pushBytes(fileData, lower.y);
+            pushBytes(fileData, lower.z);
 
-            glm:
+            for (Face* face : faces) {
+                uint32_t swp_index = be32toh(face->_id);
 
-            for (int i = 0; i < faces.size(); i++) {
-                auto it = std::find(mesh_faces.begin(), mesh_faces.end(), faces[i]);
-                uint32_t globalIndex = std::distance(mesh_faces.begin(), it);
-                uint32_t swp_index = be32toh(globalIndex);
-                file.write(reinterpret_cast<const char*>(&swp_index), sizeof(swp_index));
+                pushBytes(fileData, swp_index);
             }
         }
     }
     else {
         throw std::runtime_error("No valid mesh found for octree export");
     }
+
+    file.write(reinterpret_cast<const char*>(fileData.data()), fileData.size());
 
     if (!file.good()) {
         throw std::runtime_error("Failed to write to file: " + outfilepath);
@@ -502,86 +513,85 @@ struct NodeData {
 void ENG_API Eng::Base::importOctree(const std::string& infilepath) {
     std::ifstream file(infilepath, std::ios::binary);
 
-    if (!file.is_open()) {
+    if (!file.is_open())
         throw std::runtime_error("Failed to open file: " + infilepath);
-    }
+
+    std::vector<std::byte> fileData(std::filesystem::file_size(infilepath));
+    file.read(reinterpret_cast<char*>(fileData.data()), fileData.size());
+    file.close();
+
+    size_t offset = 0;
 
     uint32_t magic;
-    file.read(reinterpret_cast<char*>(&magic), sizeof(magic));
+    readBytes(fileData, offset, magic);
     magic = be32toh(magic);
 
-    if (magic != 0x4F435452) { // "OCTR"
+    if (magic != 0x4F435452)
         throw std::runtime_error("Invalid file format: Wrong magic number");
-    }
 
     uint8_t version;
-    file.read(reinterpret_cast<char*>(&version), sizeof(version));
+    readBytes(fileData, offset, version);
 
-    if (version != 1) {
+    if (version != 1)
         throw std::runtime_error("Unsupported file version: " + std::to_string(version));
-    }
 
     uint8_t max_depth;
-    file.read(reinterpret_cast<char*>(&max_depth), sizeof(max_depth));
+    readBytes(fileData, offset, max_depth);
 
     std::cout << "Octree file info:" << std::endl;
     std::cout << "  Version: " << (int)version << std::endl;
     std::cout << "  Max Depth: " << (int)max_depth << std::endl;
 
     uint8_t nameLength;
-    file.read(reinterpret_cast<char*>(&nameLength), sizeof(nameLength));
+    readBytes(fileData, offset, nameLength);
 
-    std::string meshName(nameLength, '\0');
-    file.read(&meshName[0], nameLength);
+    std::string meshName;
+    readString(fileData, offset, meshName, nameLength);
 
     uint8_t padding = (4 - (nameLength % 4)) % 4;
-    file.seekg(padding, std::ios::cur);
+    offset += padding;
 
     std::cout << "  Mesh Name: " << meshName << std::endl;
 
     std::vector<NodeData*> nodes;
 
-    while (file.peek() != EOF) {
+    while (offset < fileData.size()) {
         uint8_t node_depth;
         uint64_t node_id;
         uint32_t n_faces;
-
         float upperX, upperY, upperZ;
         float lowerX, lowerY, lowerZ;
 
-        file.read(reinterpret_cast<char*>(&node_depth), sizeof(node_depth));
-        file.read(reinterpret_cast<char*>(&node_id), sizeof(node_id));
-        file.read(reinterpret_cast<char*>(&n_faces), sizeof(n_faces));
+        readBytes(fileData, offset, node_depth);
+        readBytes(fileData, offset, node_id);
+        readBytes(fileData, offset, n_faces);
 
-        file.read(reinterpret_cast<char*>(&upperX), sizeof(upperX));
-        file.read(reinterpret_cast<char*>(&upperY), sizeof(upperY));
-        file.read(reinterpret_cast<char*>(&upperZ), sizeof(upperZ));
-        file.read(reinterpret_cast<char*>(&lowerX), sizeof(lowerX));
-        file.read(reinterpret_cast<char*>(&lowerY), sizeof(lowerY));
-        file.read(reinterpret_cast<char*>(&lowerZ), sizeof(lowerZ));
+        readBytes(fileData, offset, upperX);
+        readBytes(fileData, offset, upperY);
+        readBytes(fileData, offset, upperZ);
+
+        readBytes(fileData, offset, lowerX);
+        readBytes(fileData, offset, lowerY);
+        readBytes(fileData, offset, lowerZ);
 
         node_id = be64toh(node_id);
         n_faces = be32toh(n_faces);
 
         std::vector<uint32_t> faceIndices;
-
         for (uint32_t f = 0; f < n_faces; ++f) {
             uint32_t index;
-            file.read(reinterpret_cast<char*>(&index), sizeof(index));
+            readBytes(fileData, offset, index);
             faceIndices.push_back(be32toh(index));
         }
 
-        NodeData* data = new NodeData(node_id, node_depth, glm::vec3(upperX, upperY, upperZ), glm::vec3(lowerX, lowerY, lowerZ), faceIndices);
+        NodeData* data = new NodeData(node_id, node_depth,
+            glm::vec3(upperX, upperY, upperZ),
+            glm::vec3(lowerX, lowerY, lowerZ),
+            faceIndices);
         nodes.push_back(data);
-
-        //std::cout << "Node ID: " << std::bitset<64>(node_id) << std::endl;
-        //std::cout << "Depth: " << (int)node_depth << std::endl;
-        //std::cout << "Faces: " << n_faces << std::endl;
     }
 
     std::cout << "Total nodes loaded: " << nodes.size() << std::endl;
-
-    // Now rebuild the mesh and octree from the loaded data
 
     size_t lastSlash = infilepath.find_last_of("\\");
     std::string directory = (lastSlash != std::string::npos)
@@ -594,20 +604,16 @@ void ENG_API Eng::Base::importOctree(const std::string& infilepath) {
     std::vector<Face*> outFaces;
     bool success = importFile(meshpath, outVertices, outFaces);
 
-    // Key: Node ID, Depth -> Value: The Octree Node
     std::map<std::pair<uint64_t, uint8_t>, OctreeNode*> parentlessNodes;
     std::map<std::pair<uint64_t, uint8_t>, std::vector<OctreeNode*>> parentBuffer;
 
-    // Populate processedNodes with all leaves of the octree
     for (NodeData* data : nodes) {
         uint8_t currentId = data->id & 0b111;
-        
         OctreeNode* newNode = new OctreeNode(data->lowerCorner, data->upperCorner, data->depth, currentId);
-        
+
         std::vector<Face*> nodeFaces;
-        for (uint32_t face_id : data->faceIndices) {
+        for (uint32_t face_id : data->faceIndices)
             nodeFaces.push_back(outFaces[face_id]);
-        }
 
         newNode->setFaces(nodeFaces);
 
@@ -615,7 +621,6 @@ void ENG_API Eng::Base::importOctree(const std::string& infilepath) {
         parentlessNodes.emplace(key, newNode);
     }
 
-    // Reconstruct the rest of the octree
     OctreeNode* root = nullptr;
 
     while (!parentlessNodes.empty()) {
@@ -636,6 +641,7 @@ void ENG_API Eng::Base::importOctree(const std::string& infilepath) {
 
         parentBuffer[key].push_back(it->second);
         parentlessNodes.erase(it);
+
         if (parentBuffer[key].size() == 8) {
             std::vector<OctreeNode*> children = parentBuffer[key];
 
@@ -655,7 +661,6 @@ void ENG_API Eng::Base::importOctree(const std::string& infilepath) {
                 upperCorner.z = std::max(upperCorner.z, childUpper.z);
             }
 
-
             OctreeNode* newNode = new OctreeNode(lowerCorner, upperCorner, depth, currentId);
             for (OctreeNode* child : children)
                 newNode->addChild(child);
@@ -671,6 +676,4 @@ void ENG_API Eng::Base::importOctree(const std::string& infilepath) {
         std::cout << "[+] Mesh Loaded: " << mesh->getName() << std::endl;
         addNodeTo(getCurrentScene(), mesh);
     }
-
-    file.close();
 }
