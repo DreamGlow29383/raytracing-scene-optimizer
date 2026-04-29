@@ -124,7 +124,7 @@ void OctreeNode::insert(Face* face) {
             if (child->check(face))
                 child->insert(face);
     }
-    else if (this->faces.size() >= max_faces && node_depth < max_depth) {
+    else if (this->faces.size() >= MAX_FACES && node_depth < MAX_DEPTH) {
         split();
         for (OctreeNode* child : children)
             if (child->check(face))

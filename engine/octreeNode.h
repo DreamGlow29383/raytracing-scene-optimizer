@@ -3,8 +3,8 @@
 #include "engine.h"
 #include "face.h"
 
-static int max_faces = 10;
-static int max_depth = 10;
+static int MAX_FACES = 10;
+static int MAX_DEPTH = 5;
 
 class OctreeNode {
 public:

@@ -69,5 +69,5 @@ private:
     void printOctreeHierarchy(OctreeNode* node, const std::string& prefix, bool isLast, bool isRoot);
     glm::vec3 computeDensityColor(size_t faceCount);
     glm::vec3 computeDepthColor(int depth);
-    glm::vec3 computeRandomColor(int id, int depth);
+    glm::vec3 computeRandomColor();
 };

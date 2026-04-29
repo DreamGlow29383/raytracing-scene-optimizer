@@ -37,7 +37,7 @@ Mesh::Mesh(std::vector<Face*> faces, std::vector<Vertex*> vertices)
             nodeIndexCounts[node] = indices.size();
             faceColors[node] = computeDensityColor(node->getFaces().size());
             depthColors[node] = computeDepthColor(node->getDepth());
-            nodeColors[node] = computeRandomColor(node->getId(), node->getDepth());
+            nodeColors[node] = computeRandomColor();
         }
     }
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
@@ -88,7 +88,7 @@ Mesh::Mesh(std::vector<Face*> faces, std::vector<Vertex*> vertices, OctreeNode* 
             nodeIndexCounts[node] = indices.size();
             faceColors[node] = computeDensityColor(node->getFaces().size());
             depthColors[node] = computeDepthColor(node->getDepth());
-            nodeColors[node] = computeRandomColor(node->getId(), node->getDepth());
+            nodeColors[node] = computeRandomColor();
         }
     }
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
@@ -129,7 +129,7 @@ void Mesh::render(glm::mat4 cameraInverse)
 
         glDisable(GL_LIGHTING);
     }
-
+    
     glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
 
     if (eng.getColoringMode() == 0) {
@@ -219,7 +219,7 @@ void Mesh::printOctreeHierarchy(OctreeNode* node, const std::string& prefix, boo
 }
 
 glm::vec3 Mesh::computeDensityColor(size_t faceCount) {
-    const float maxFaces = 10.0f;
+    const float maxFaces = MAX_FACES;
     float t = std::min((float)faceCount / maxFaces, 1.0f);
 
     glm::vec3 colors[] = {
@@ -239,7 +239,7 @@ glm::vec3 Mesh::computeDensityColor(size_t faceCount) {
 
 glm::vec3 Mesh::computeDepthColor(int depth)
 {
-    const float maxDepth = 10.0f;
+    const float maxDepth = MAX_DEPTH;
     float t = std::min((float)depth / maxDepth, 1.0f);
 
     glm::vec3 colors[] = {
@@ -257,9 +257,8 @@ glm::vec3 Mesh::computeDepthColor(int depth)
     return glm::mix(colors[idx], colors[idx + 1], frac);
 }
 
-glm::vec3 Mesh::computeRandomColor(int id, int depth)
+glm::vec3 Mesh::computeRandomColor()
 {
-    std::srand(id * 31 + depth * 97);
     float r = (std::rand() % 256) / 255.0f;
     float g = (std::rand() % 256) / 255.0f;
     float b = (std::rand() % 256) / 255.0f;
