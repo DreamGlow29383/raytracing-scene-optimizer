@@ -551,22 +551,46 @@ bool ENG_API Eng::Base::rayIntersectsFace(Face* face) {
    }
 
 void ENG_API Eng::Base::renderRay() {
-   glDisable(GL_LIGHTING);
-   glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
-   glEnable(GL_POLYGON_OFFSET_FILL);
-   glPolygonOffset(1.0f, 1.0f);
+   if (_facesHit.empty() && _nodesHit.empty()) return;
 
-   for (int i = 0; i < _facesHit.size(); i++) {
-      glm::vec3& col = nodeColors[colorType[i]];
-      glBegin(GL_TRIANGLES);
-      glColor3f(col.r, col.g, col.b);
-      glVertex3f(_facesHit[i]->_vertices[0]->x, _facesHit[i]->_vertices[0]->y, _facesHit[i]->_vertices[0]->z);
-      glVertex3f(_facesHit[i]->_vertices[1]->x, _facesHit[i]->_vertices[1]->y, _facesHit[i]->_vertices[1]->z);
-      glVertex3f(_facesHit[i]->_vertices[2]->x, _facesHit[i]->_vertices[2]->y, _facesHit[i]->_vertices[2]->z);
-      glEnd();
+   glDisable(GL_LIGHTING);
+   glDisable(GL_TEXTURE_2D);
+
+   // Render through mode (cubes)
+   if (!_nodesHit.empty()) {
+      for (OctreeNode* node : _nodesHit) {
+         if (nodeColors.find(node) != nodeColors.end()) {
+            renderNodeAsCube(node, nodeColors[node]);
+         }
+      }
+   }
+   // Render surface mode (faces)
+   else if (!_facesHit.empty()) {
+      glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+      glEnable(GL_POLYGON_OFFSET_FILL);
+      glPolygonOffset(1.0f, 1.0f);
+
+      for (size_t i = 0; i < _facesHit.size(); i++) {
+         glm::vec3 col;
+         if (i < colorType.size() && nodeColors.find(colorType[i]) != nodeColors.end()) {
+            col = nodeColors[colorType[i]];
+         }
+         else {
+            col = glm::vec3(1.0f, 0.0f, 0.0f); // Default red
+         }
+
+         glBegin(GL_TRIANGLES);
+         glColor3f(col.r, col.g, col.b);
+         glVertex3f(_facesHit[i]->_vertices[0]->x, _facesHit[i]->_vertices[0]->y, _facesHit[i]->_vertices[0]->z);
+         glVertex3f(_facesHit[i]->_vertices[1]->x, _facesHit[i]->_vertices[1]->y, _facesHit[i]->_vertices[1]->z);
+         glVertex3f(_facesHit[i]->_vertices[2]->x, _facesHit[i]->_vertices[2]->y, _facesHit[i]->_vertices[2]->z);
+         glEnd();
+      }
+
+      glDisable(GL_POLYGON_OFFSET_FILL);
    }
 
-   glDisable(GL_POLYGON_OFFSET_FILL);
+   glEnable(GL_LIGHTING);
 }
 
 void ENG_API Eng::Base::locateRaySurface() {
@@ -633,4 +657,60 @@ void ENG_API Eng::Base::locateRayThrough() {
    }
 
    std::cout << "Ray passes through " << _nodesHit.size() << " nodes" << std::endl;
+}
+
+void ENG_API Eng::Base::renderNodeAsCube(OctreeNode* node, glm::vec3 color) {
+   glm::vec3 min = node->getLowerBounds();
+   glm::vec3 max = node->getUpperBounds();
+
+   glm::vec3 corners[8] = {
+       glm::vec3(min.x, min.y, min.z), // 0
+       glm::vec3(max.x, min.y, min.z), // 1
+       glm::vec3(max.x, max.y, min.z), // 2
+       glm::vec3(min.x, max.y, min.z), // 3
+       glm::vec3(min.x, min.y, max.z), // 4
+       glm::vec3(max.x, min.y, max.z), // 5
+       glm::vec3(max.x, max.y, max.z), // 6
+       glm::vec3(min.x, max.y, max.z)  // 7
+   };
+
+   int edges[12][2] = {
+       {0,1}, {1,2}, {2,3}, {3,0}, // bottom face
+       {4,5}, {5,6}, {6,7}, {7,4}, // top face
+       {0,4}, {1,5}, {2,6}, {3,7}  // vertical edges
+   };
+
+   glColor3f(color.r, color.g, color.b);
+   glBegin(GL_LINES);
+   for (int i = 0; i < 12; i++) {
+      glVertex3fv(&corners[edges[i][0]].x);
+      glVertex3fv(&corners[edges[i][1]].x);
+   }
+   glEnd();
+
+   glEnable(GL_BLEND);
+   glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+   glColor4f(color.r, color.g, color.b, 0.8f); // 20% transparency
+
+   glBegin(GL_QUADS);
+   // Bottom face
+   glVertex3fv(&corners[0].x); glVertex3fv(&corners[1].x);
+   glVertex3fv(&corners[2].x); glVertex3fv(&corners[3].x);
+   // Top face
+   glVertex3fv(&corners[4].x); glVertex3fv(&corners[5].x);
+   glVertex3fv(&corners[6].x); glVertex3fv(&corners[7].x);
+   // Front face
+   glVertex3fv(&corners[0].x); glVertex3fv(&corners[1].x);
+   glVertex3fv(&corners[5].x); glVertex3fv(&corners[4].x);
+   // Back face
+   glVertex3fv(&corners[3].x); glVertex3fv(&corners[2].x);
+   glVertex3fv(&corners[6].x); glVertex3fv(&corners[7].x);
+   // Left face
+   glVertex3fv(&corners[0].x); glVertex3fv(&corners[3].x);
+   glVertex3fv(&corners[7].x); glVertex3fv(&corners[4].x);
+   // Right face
+   glVertex3fv(&corners[1].x); glVertex3fv(&corners[2].x);
+   glVertex3fv(&corners[6].x); glVertex3fv(&corners[5].x);
+   glEnd();
+   glDisable(GL_BLEND);
 }

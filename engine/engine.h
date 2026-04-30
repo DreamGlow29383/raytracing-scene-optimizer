@@ -334,9 +334,9 @@ private:
 
     void addNode(Node* node);
     void addNodeTo(Node* parent, Node* node);
-    void locateRay();
     void locateRayThrough();
     void locateRaySurface();
+    void renderNodeAsCube(OctreeNode* node, glm::vec3 color);
 
     Base();
 };
