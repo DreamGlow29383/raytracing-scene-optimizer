@@ -43,19 +43,6 @@ Mesh::Mesh(std::vector<Face*> faces, std::vector<Vertex*> vertices)
     }
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
 
-    std::vector<unsigned int> allIndices;
-    for (OctreeNode* node : _leafNodes) {
-        for (Face* face : node->getFaces()) {
-            for (unsigned int idx : face->_indices) {
-                allIndices.push_back(idx);
-            }
-        }
-    }
-    glGenBuffers(1, &unifiedIndexVBO);
-    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, unifiedIndexVBO);
-    glBufferData(GL_ELEMENT_ARRAY_BUFFER, allIndices.size() * sizeof(unsigned int), allIndices.data(), GL_STATIC_DRAW);
-    unifiedIndexCount = allIndices.size();
-
     buildExpandedBuffers();
     updateColorVBO(0);
 }

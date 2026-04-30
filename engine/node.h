@@ -24,7 +24,7 @@ class ENG_API Node : public Object
 {
 public:
 	Node();
-	~Node();
+	virtual ~Node();
 
 	/**
 	 * @brief Adds a child node to this node.
