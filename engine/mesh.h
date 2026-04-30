@@ -33,9 +33,20 @@ public:
 
     void updateColorVBO(int coloringMode);
 
+    void setFaceHit(Face* face) {
+       _faceHit = face;
+    }
+
+    void setNodesHit(std::vector<OctreeNode*> nodes) {
+       _nodesHit = nodes;
+    }
+
 private:
     std::vector<Vertex*> _vertices;
     std::vector<Face*> _faces;
+
+    Face* _faceHit;
+    std::vector<OctreeNode*> _nodesHit;
 
     unsigned int vertexVBO = 0;
     unsigned int indexVBO = 0;
