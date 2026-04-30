@@ -405,9 +405,8 @@ void ENG_API Eng::Base::exportOctree(const std::string& outfilepath) {
     file.close();
 }
 
-void ENG_API Eng::Base::castRay(int mouseX, int mouseY) {
-   Eng::Base& eng = Eng::Base::getInstance();
-   Scene* scene = eng.getCurrentScene();
+void ENG_API Eng::Base::castRaySurface(int mouseX, int mouseY) {
+   Scene* scene = this->getCurrentScene();
    Camera* camera = scene->getCurrentCamera();
    Eng::CameraConfig cameraConfig = camera->getConfig();
 
@@ -443,26 +442,70 @@ void ENG_API Eng::Base::castRay(int mouseX, int mouseY) {
    scene->setRay(rayStart, rayEnd);
 }
 
-// does not work now
-void ENG_API Eng::Base::castRaysRandom(int n) {
-   std::srand(time(NULL));
-   int x;
-   int y;
+void ENG_API Eng::Base::castRayThrough(int mouseX, int mouseY) {
+   Scene* scene = this->getCurrentScene();
+   Camera* camera = scene->getCurrentCamera();
+   Eng::CameraConfig cameraConfig = camera->getConfig();
+
    int viewport[4];
    glGetIntegerv(GL_VIEWPORT, viewport);
 
-   for (int i = 0; i < n; i++) {
-      x = std::rand() % viewport[2];
-      y = rand() % viewport[3];
-      castRay(x, y);
-      glutPostRedisplay();
-      std::this_thread::sleep_for(std::chrono::milliseconds(50));
+   glm::mat4 projMatrix = camera->getProj();
+   glm::mat4 viewMatrix = glm::inverse(camera->getTransform());
+
+   GLdouble winX = (GLdouble)mouseX;
+   GLdouble winY = (GLdouble)viewport[3] - (GLdouble)mouseY;
+
+   double modelArray[16];
+   double projArray[16];
+
+   for (int i = 0; i < 16; i++) {
+      modelArray[i] = viewMatrix[i / 4][i % 4];
+      projArray[i] = projMatrix[i / 4][i % 4];
    }
+
+   GLdouble nearX, nearY, nearZ;
+   gluUnProject(winX, winY, 0.0f, modelArray, projArray, viewport, &nearX, &nearY, &nearZ);
+
+   GLdouble farX, farY, farZ;
+   gluUnProject(winX, winY, 1.0f, modelArray, projArray, viewport, &farX, &farY, &farZ);
+
+   glm::vec3 rayStart = glm::vec3((GLfloat)nearX, (GLfloat)nearY, (GLfloat)nearZ);
+   glm::vec3 rayEnd = glm::vec3((GLfloat)farX, (GLfloat)farY, (GLfloat)farZ);
+
+   std::cout << "rayStart: (" << rayStart.x << ", " << rayStart.y << ", " << rayStart.z << ")" << std::endl;
+   std::cout << "rayEnd: (" << rayEnd.x << ", " << rayEnd.y << ", " << rayEnd.z << ")" << std::endl;
+
+   scene->setRay(rayStart, rayEnd);
+}
+
+bool ENG_API Eng::Base::rayIntersectsNode(OctreeNode* node) {
+   Scene* scene = this->getCurrentScene();
+
+   glm::vec3 rayStart = scene->getRayStart();
+   glm::vec3 rayEnd = scene->getRayEnd();   
+
+   Vertex* rayStartVertex = new Vertex();
+   rayStartVertex->x = rayStart.x;
+   rayStartVertex->y = rayStart.y;
+   rayStartVertex->z = rayStart.z;
+
+   Vertex* rayEndVertex = new Vertex();
+   rayEndVertex->x = rayEnd.x;
+   rayEndVertex->y = rayEnd.y;
+   rayEndVertex->z = rayEnd.z;
+
+   Face* flatTriangle = new Face();
+   flatTriangle->_vertices.push_back(rayStartVertex);
+   flatTriangle->_vertices.push_back(rayEndVertex);
+   flatTriangle->_vertices.push_back(rayEndVertex);
+
+   return node->check(flatTriangle);
 }
 
 bool ENG_API Eng::Base::rayIntersectsFace(Face* face) {
 
-   Scene* scene = getCurrentScene();
+   Scene* scene = this->getCurrentScene();
 
    glm::vec3 rayStart = scene->getRayStart();
    glm::vec3 rayEnd = scene->getRayEnd();

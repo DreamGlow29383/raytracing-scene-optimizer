@@ -1,7 +1,9 @@
+#pragma once
+#include "face.h"
+
 #include <stdbool.h>
 #include <vector>
-#include "engine.h"
-#include "face.h"
+#include <glm/glm.hpp>
 
 static int max_faces = 10;
 static int max_depth = 10;
@@ -14,7 +16,6 @@ public:
 
     void insert(Face* face);
 
-    // check if vertices are within bounding box
     bool check(const Face* face);
     bool isSplit();
     void render(glm::mat4 cameraInverse);

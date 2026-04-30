@@ -17,6 +17,7 @@
 
 class Node;
 class Scene;
+class OctreeNode;
 
 #ifdef _DEBUG
     #define LIB_NAME        "My Graphics Engine v0.1a (debug)"
@@ -287,9 +288,11 @@ public:
 
     void exportOctree(const std::string& outfilepath);
 
-    void castRay(int x, int y);
+    void castRaySurface(int x, int y);
 
-    void castRaysRandom(int n);
+    void castRayThrough(int x, int y);
+
+    bool rayIntersectsNode(OctreeNode* node);
 
     bool rayIntersectsFace(Face* face);
 

@@ -29,15 +29,14 @@ public:
 
 private:
 
-	std::vector<Face*> toRender;
 	std::vector<OctreeNode*> colorType;
+	std::vector<Face*> _facesHit;
+	std::vector<OctreeNode*> _nodesHit;
 
 	glm::vec3 colors[5];
 
 	std::vector<Vertex*> _vertices;
 	std::vector<Face*> _faces;
-
-	std::vector<Face*> _facesHit;
 
 	unsigned int vertexVBO = 0;
 	unsigned int indexVBO = 0;

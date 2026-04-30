@@ -1,7 +1,9 @@
+#pragma once
 #include "octreeNode.h"
-
+#include "engine.h"
 #include <utility>
 #include <iostream>
+
 
 OctreeNode::OctreeNode(std::vector<Vertex*> allVertices, std::vector<Face*> allFaces) {
 

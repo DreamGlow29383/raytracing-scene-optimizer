@@ -155,9 +155,13 @@ void keyboardUpCallback(unsigned char key, int mouseX, int mouseY) {
 void mouseCallback(int button, int state, int x, int y) {
 	Eng::Base& eng = Eng::Base::getInstance();
 	if (button == GLUT_LEFT_BUTTON && state == GLUT_DOWN) {
-		std::cout << "Mouse clicked at: " << x << ", " << y << std::endl;
-		eng.castRay(x, y);
-		//eng.castRaysRandom(10);
+		std::cout << "Mouse (left) clicked at: " << x << ", " << y << std::endl;
+		eng.castRaySurface(x, y);
+		glutPostWindowRedisplay(windowId);
+	}
+	if (button == GLUT_RIGHT_BUTTON && state == GLUT_DOWN) {
+		std::cout << "Mouse (right) clicked at: " << x << ", " << y << std::endl;
+		eng.castRayThrough(x, y);
 		glutPostWindowRedisplay(windowId);
 	}
 }
