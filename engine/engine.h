@@ -306,6 +306,16 @@ public:
        return rayIntersectsFaceFlag;
     }
 
+    void setRootNode(OctreeNode* rootNode) {
+       this->rootNode = rootNode;
+    }
+
+    void addNodeColor(OctreeNode* node, glm::vec3 color) {
+       this->nodeColors[node] = color;
+    }
+
+    void renderRay();
+
 private:
     struct Reserved;
     std::unique_ptr<Reserved> reserved;
@@ -316,8 +326,17 @@ private:
     int windowId;
     bool rayIntersectsFaceFlag;
 
+    OctreeNode* rootNode;
+    std::vector<OctreeNode*> colorType;
+    std::vector<Face*> _facesHit;
+    std::vector<OctreeNode*> _nodesHit;
+    std::unordered_map<OctreeNode*, glm::vec3> nodeColors;
+
     void addNode(Node* node);
     void addNodeTo(Node* parent, Node* node);
+    void locateRay();
+    void locateRayThrough();
+    void locateRaySurface();
 
     Base();
 };

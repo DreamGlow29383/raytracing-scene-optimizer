@@ -51,6 +51,8 @@ Mesh::Mesh(std::vector<Face*> faces, std::vector<Vertex*> vertices) : colors{
 	delete[] flatNormals;
 
 	rootNode = new OctreeNode(_vertices, _faces);
+	Eng::Base& eng = Eng::Base::getInstance();
+	eng.setRootNode(rootNode);
 
 	std::vector<OctreeNode*> stack = { rootNode };
 	while (!stack.empty()) {
@@ -72,7 +74,9 @@ Mesh::Mesh(std::vector<Face*> faces, std::vector<Vertex*> vertices) : colors{
 			nodeIndexVBOs[node] = vbo;
 			nodeIndexCounts[node] = indices.size();
 			//nodeColors[node] = computeDensityColor(node->getFaces().size());
-			nodeColors[node] = computeDepthColor(node->getDepth());
+			auto color = computeDepthColor(node->getDepth());
+			nodeColors[node] = color;
+			eng.addNodeColor(node, color);
 		}
 	}
 	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
@@ -99,66 +103,9 @@ void Mesh::render(glm::mat4 cameraInverse)
 	glNormalPointer(GL_FLOAT, 0, nullptr);
 	glEnableClientState(GL_NORMAL_ARRAY);
 
-	// --- Pass 1: solid fill ---
-	glDisable(GL_LIGHTING);
-	glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
-	glEnable(GL_POLYGON_OFFSET_FILL);
-	glPolygonOffset(1.0f, 1.0f);
-
 	std::vector<OctreeNode*> stack = { rootNode };
 
-	// find the node containing the ray to render
-	bool rayFound = false;
-	while (eng.getCurrentScene()->hasRay() && !rayFound) {
-		OctreeNode* node = stack.back();
-		stack.pop_back();
-		if (node->hasChildren()) {
-			for (OctreeNode* child : node->getChildren()) {
-				// exact node found
-				if (eng.rayIntersectsNode(child) && child->hasFaces()) {
-					_nodesHit.push_back(child);
-					// check every face in the node, unnecessary for rayCastThrough
-					for (const auto& f : child->getFaces()) {
-						// line-plane intersection check
-						if (eng.rayIntersectsFace(f)) {
-							_facesHit.push_back(f);
-							colorType.push_back(child);
-						}
-					}
-					rayFound = true;
-					break;
-				}
-				// not a leaf node
-				else {
-					stack.push_back(child);
-				}
-			}
-		}
-	}
-
-	for (int i = 0; i < _facesHit.size(); i++) {
-		glm::vec3& col = nodeColors[colorType[i]];
-		glBegin(GL_TRIANGLES);
-		glColor3f(col.r, col.g, col.b);
-		glVertex3f(_facesHit[i]->_vertices[0]->x, _facesHit[i]->_vertices[0]->y, _facesHit[i]->_vertices[0]->z);
-		glVertex3f(_facesHit[i]->_vertices[1]->x, _facesHit[i]->_vertices[1]->y, _facesHit[i]->_vertices[1]->z);
-		glVertex3f(_facesHit[i]->_vertices[2]->x, _facesHit[i]->_vertices[2]->y, _facesHit[i]->_vertices[2]->z);
-		glEnd();
-	}
-
-	//for (int i = 0; i < _nodesHit.size(); i++) {
-	//	for (int j = 0; j < _nodesHit[i]->getFaces().size(); j++) {
-	//		glm::vec3& col = nodeColors[colorType[i]];
-	//		glBegin(GL_TRIANGLES);
-	//		glColor3f(col.r, col.g, col.b);
-	//		glVertex3f(_nodesHit[i]->getFaces()[j]->_vertices[0]->x, _nodesHit[i]->getFaces()[j]->_vertices[0]->y, _nodesHit[i]->getFaces()[j]->_vertices[0]->z);
-	//		glVertex3f(_nodesHit[i]->getFaces()[j]->_vertices[1]->x, _nodesHit[i]->getFaces()[j]->_vertices[1]->y, _nodesHit[i]->getFaces()[j]->_vertices[1]->z);
-	//		glVertex3f(_nodesHit[i]->getFaces()[j]->_vertices[2]->x, _nodesHit[i]->getFaces()[j]->_vertices[2]->y, _nodesHit[i]->getFaces()[j]->_vertices[2]->z);
-	//		glEnd();
-	//	}
-	//}
-
-	glDisable(GL_POLYGON_OFFSET_FILL);
+	eng.renderRay();
 
 	// --- Pass 2: edges only ---
 	glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);

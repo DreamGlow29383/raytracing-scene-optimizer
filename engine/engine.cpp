@@ -440,6 +440,7 @@ void ENG_API Eng::Base::castRaySurface(int mouseX, int mouseY) {
    std::cout << "rayEnd: (" << rayEnd.x << ", " << rayEnd.y << ", " << rayEnd.z << ")" << std::endl;
 
    scene->setRay(rayStart, rayEnd);
+   locateRaySurface();
 }
 
 void ENG_API Eng::Base::castRayThrough(int mouseX, int mouseY) {
@@ -477,6 +478,7 @@ void ENG_API Eng::Base::castRayThrough(int mouseX, int mouseY) {
    std::cout << "rayEnd: (" << rayEnd.x << ", " << rayEnd.y << ", " << rayEnd.z << ")" << std::endl;
 
    scene->setRay(rayStart, rayEnd);
+   locateRayThrough();
 }
 
 bool ENG_API Eng::Base::rayIntersectsNode(OctreeNode* node) {
@@ -520,7 +522,6 @@ bool ENG_API Eng::Base::rayIntersectsFace(Face* face) {
    rayEndVertex->y = rayEnd.y;
    rayEndVertex->z = rayEnd.z;
    
-      // Ray origin and direction
       glm::vec3 orig(rayStart.x, rayStart.y, rayStart.z);
       glm::vec3 dir(
          rayEnd.x - rayStart.x,
@@ -534,12 +535,10 @@ bool ENG_API Eng::Base::rayIntersectsFace(Face* face) {
       Vertex* v1 = face->_vertices[1];
       Vertex* v2 = face->_vertices[2];
 
-      // Convert to glm::vec3
       glm::vec3 vert0(v0->x, v0->y, v0->z);
       glm::vec3 vert1(v1->x, v1->y, v1->z);
       glm::vec3 vert2(v2->x, v2->y, v2->z);
 
-      // Check intersection
       if (intersectLineTriangle(orig, dir, vert0, vert1, vert2, intersectPos)) {
          // check if intersection is within ray segment (0 <= t <= 1)
          float t = glm::length(intersectPos - orig) / glm::length(dir);
@@ -550,3 +549,88 @@ bool ENG_API Eng::Base::rayIntersectsFace(Face* face) {
       }
       return false;
    }
+
+void ENG_API Eng::Base::renderRay() {
+   glDisable(GL_LIGHTING);
+   glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+   glEnable(GL_POLYGON_OFFSET_FILL);
+   glPolygonOffset(1.0f, 1.0f);
+
+   for (int i = 0; i < _facesHit.size(); i++) {
+      glm::vec3& col = nodeColors[colorType[i]];
+      glBegin(GL_TRIANGLES);
+      glColor3f(col.r, col.g, col.b);
+      glVertex3f(_facesHit[i]->_vertices[0]->x, _facesHit[i]->_vertices[0]->y, _facesHit[i]->_vertices[0]->z);
+      glVertex3f(_facesHit[i]->_vertices[1]->x, _facesHit[i]->_vertices[1]->y, _facesHit[i]->_vertices[1]->z);
+      glVertex3f(_facesHit[i]->_vertices[2]->x, _facesHit[i]->_vertices[2]->y, _facesHit[i]->_vertices[2]->z);
+      glEnd();
+   }
+
+   glDisable(GL_POLYGON_OFFSET_FILL);
+}
+
+void ENG_API Eng::Base::locateRaySurface() {
+   _facesHit.clear();
+   _nodesHit.clear();
+   colorType.clear();
+
+   if (!getCurrentScene()->hasRay()) return;
+
+   std::vector<OctreeNode*> stack = { rootNode };
+
+   while (!stack.empty()) {
+      OctreeNode* node = stack.back();
+      stack.pop_back();
+
+      if (!rayIntersectsNode(node)) continue;
+
+      if (node->hasChildren()) {
+         for (OctreeNode* child : node->getChildren()) {
+            stack.push_back(child);
+         }
+      }
+      else if (node->hasFaces()) {
+         for (const auto& f : node->getFaces()) {
+            if (rayIntersectsFace(f)) {
+               _facesHit.push_back(f);
+               _nodesHit.push_back(node);
+               colorType.push_back(node);
+               return; 
+            }
+         }
+      }
+   }
+}
+
+void ENG_API Eng::Base::locateRayThrough() {
+   _facesHit.clear();
+   _nodesHit.clear();
+   colorType.clear();
+
+   if (!getCurrentScene()->hasRay()) return;
+
+   std::vector<OctreeNode*> stack = { rootNode };
+
+   while (!stack.empty()) {
+      OctreeNode* node = stack.back();
+      stack.pop_back();
+
+      if (!rayIntersectsNode(node)) continue;
+
+      if (node->hasChildren()) {
+         for (OctreeNode* child : node->getChildren()) {
+            stack.push_back(child);
+         }
+      }
+      else if (node->hasFaces()) {
+         _nodesHit.push_back(node);
+
+         for (const auto& f : node->getFaces()) {
+            _facesHit.push_back(f);
+            colorType.push_back(node);
+         }
+      }
+   }
+
+   std::cout << "Ray passes through " << _nodesHit.size() << " nodes" << std::endl;
+}
