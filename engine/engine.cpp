@@ -576,7 +576,7 @@ void ENG_API Eng::Base::renderRay() {
             col = nodeColors[colorType[i]];
          }
          else {
-            col = glm::vec3(1.0f, 0.0f, 0.0f); // Default red
+            col = glm::vec3(1.0f, 0.0f, 0.0f);
          }
 
          glBegin(GL_TRIANGLES);
@@ -617,7 +617,6 @@ void ENG_API Eng::Base::locateRaySurface() {
          for (const auto& f : node->getFaces()) {
             if (rayIntersectsFace(f)) {
                _facesHit.push_back(f);
-               _nodesHit.push_back(node);
                colorType.push_back(node);
                return; 
             }
