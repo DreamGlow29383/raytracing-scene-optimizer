@@ -4,7 +4,7 @@
 #include "face.h"
 
 static int MAX_FACES = 10;
-static int MAX_DEPTH = 5;
+static int MAX_DEPTH = 10;
 
 class OctreeNode {
 public:

@@ -3,6 +3,7 @@
 #include <iostream>
 #include <math.h>
 #include <algorithm>
+#include <chrono>
 
 #include <GL/glew.h>
 #include <GL/freeglut.h>
@@ -105,6 +106,17 @@ Mesh::~Mesh()
     glDeleteBuffers(1, &expandedNormalVBO);
     glDeleteBuffers(1, &colorVBO);
     glDeleteBuffers(1, &unifiedIndexVBO);
+
+    for (auto& pair : nodeIndexVBOs)
+        glDeleteBuffers(1, &pair.second);
+
+    for (Face* face : _faces)
+        delete face;
+
+    for (Vertex* vertex : _vertices)
+        delete vertex;
+
+    delete rootNode;
 }
 
 void Mesh::render(glm::mat4 cameraInverse)

@@ -68,7 +68,11 @@ OctreeNode::OctreeNode(glm::vec3 lowerCorner, glm::vec3 upperCorner, int depth, 
     this->id = id;
 }
 
-OctreeNode::~OctreeNode() {}
+OctreeNode::~OctreeNode() {
+    for (OctreeNode* child : children)
+        delete(child);
+    children.clear();
+}
 
 void OctreeNode::split() {
 

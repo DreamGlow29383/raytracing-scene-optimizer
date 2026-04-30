@@ -324,7 +324,7 @@ void ENG_API Eng::Base::removeNode(int id) {
     for (int i = 0; i < scene->getNrOfChildren(); i++) {
         Node* current = scene->getChild(i);
         if (current->getId() == id) {
-            scene->removeChild(i);
+            delete scene->removeChild(i);
             break;
         }
     }
@@ -334,18 +334,27 @@ int ENG_API Eng::Base::addNodeFromFile(int parent, const std::string& filepath) 
     std::vector<Vertex*> outVertices;
     std::vector<Face*> outFaces;
 
+    auto t0 = std::chrono::high_resolution_clock::now();
     bool success = importFile(filepath, outVertices, outFaces);
-    std::string meshName = filepath.substr(filepath.find_last_of("\\") + 1);
+    auto t1 = std::chrono::high_resolution_clock::now();
 
+    std::string meshName = filepath.substr(filepath.find_last_of("\\") + 1);
     if (success) {
         Mesh* mesh = new Mesh(outFaces, outVertices);
+        auto t2 = std::chrono::high_resolution_clock::now();
+
         mesh->setName(meshName);
         std::cout << "[+] Mesh Loaded: " << mesh->getName() << std::endl;
-        std::cout << "[?] Faces: " << outFaces.size() << std::endl;
+        std::cout << "[>] Faces: " << outFaces.size() << std::endl;
+
+        auto meshLoad = duration_cast<std::chrono::milliseconds>(t1 - t0).count();
+        auto total = duration_cast<std::chrono::milliseconds>(t2 - t0).count();
+        std::cout << "[>] Octree generation took: " << total << " ms\n";
+        std::cout << "[>] Octree generation took (excluding mesh load): " << total - meshLoad << " ms\n";
+
         addNodeTo(getCurrentScene()->getNode(parent), mesh);
         return mesh->getId();
     }
-
     return NULL;
 }
 
@@ -409,6 +418,7 @@ void traverseOctree(uint64_t completeId, OctreeNode* node) {
 }
 
 void ENG_API Eng::Base::exportOctree(const std::string& outfilepath) {
+    auto start = std::chrono::high_resolution_clock::now();
     std::ofstream file(outfilepath, std::ios::binary | std::ios::trunc);
 
     if (!file.is_open()) {
@@ -448,13 +458,7 @@ void ENG_API Eng::Base::exportOctree(const std::string& outfilepath) {
 
         exportedNodes.clear();
 
-        auto start = std::chrono::high_resolution_clock::now();
-
         traverseOctree(root->getId(), root);
-
-        auto end = std::chrono::high_resolution_clock::now();
-        auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(end - start);
-        std::cout << "traverseOctree took: " << duration.count() << " ms" << std::endl;
 
         for (std::pair<uint64_t, OctreeNode*> pair : exportedNodes) {
             uint64_t id = be64toh(pair.first);
@@ -500,6 +504,10 @@ void ENG_API Eng::Base::exportOctree(const std::string& outfilepath) {
     }
 
     file.close();
+
+    auto end = std::chrono::high_resolution_clock::now();
+    auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(end - start);
+    std::cout << "[>] Octree export took: " << duration.count() << " ms" << std::endl;
 }
 
 struct NodeData {
@@ -510,7 +518,14 @@ struct NodeData {
     std::vector<uint32_t> faceIndices;
 };
 
+struct PairHash {
+    size_t operator()(const std::pair<uint64_t, uint8_t>& p) const {
+        return std::hash<uint64_t>()(p.first) ^ ((size_t)p.second << 32);
+    }
+};
+
 void ENG_API Eng::Base::importOctree(const std::string& infilepath) {
+    auto start = std::chrono::high_resolution_clock::now();
     std::ifstream file(infilepath, std::ios::binary);
 
     if (!file.is_open())
@@ -553,7 +568,7 @@ void ENG_API Eng::Base::importOctree(const std::string& infilepath) {
 
     std::cout << "  Mesh Name: " << meshName << std::endl;
 
-    std::vector<NodeData*> nodes;
+    std::vector<NodeData> nodes;
 
     while (offset < fileData.size()) {
         uint8_t node_depth;
@@ -584,7 +599,7 @@ void ENG_API Eng::Base::importOctree(const std::string& infilepath) {
             faceIndices.push_back(be32toh(index));
         }
 
-        NodeData* data = new NodeData(node_id, node_depth,
+        NodeData data = NodeData(node_id, node_depth,
             glm::vec3(upperX, upperY, upperZ),
             glm::vec3(lowerX, lowerY, lowerZ),
             faceIndices);
@@ -602,22 +617,25 @@ void ENG_API Eng::Base::importOctree(const std::string& infilepath) {
 
     std::vector<Vertex*> outVertices;
     std::vector<Face*> outFaces;
+    auto t0 = std::chrono::high_resolution_clock::now();
     bool success = importFile(meshpath, outVertices, outFaces);
+    auto t1 = std::chrono::high_resolution_clock::now();
+    auto meshImportTime = duration_cast<std::chrono::milliseconds>(t1 - t0).count();
 
-    std::map<std::pair<uint64_t, uint8_t>, OctreeNode*> parentlessNodes;
-    std::map<std::pair<uint64_t, uint8_t>, std::vector<OctreeNode*>> parentBuffer;
+    std::unordered_map<std::pair<uint64_t, uint8_t>, OctreeNode*, PairHash> parentlessNodes;
+    std::unordered_map<std::pair<uint64_t, uint8_t>, std::vector<OctreeNode*>, PairHash> parentBuffer;
 
-    for (NodeData* data : nodes) {
-        uint8_t currentId = data->id & 0b111;
-        OctreeNode* newNode = new OctreeNode(data->lowerCorner, data->upperCorner, data->depth, currentId);
+    for (const NodeData& data : nodes) {
+        uint8_t currentId = data.id & 0b111;
+        OctreeNode* newNode = new OctreeNode(data.lowerCorner, data.upperCorner, data.depth, currentId);
 
         std::vector<Face*> nodeFaces;
-        for (uint32_t face_id : data->faceIndices)
+        for (uint32_t face_id : data.faceIndices)
             nodeFaces.push_back(outFaces[face_id]);
 
         newNode->setFaces(nodeFaces);
 
-        auto key = std::make_pair(data->id, data->depth);
+        auto key = std::make_pair(data.id, data.depth);
         parentlessNodes.emplace(key, newNode);
     }
 
@@ -676,4 +694,9 @@ void ENG_API Eng::Base::importOctree(const std::string& infilepath) {
         std::cout << "[+] Mesh Loaded: " << mesh->getName() << std::endl;
         addNodeTo(getCurrentScene(), mesh);
     }
+
+    auto end = std::chrono::high_resolution_clock::now();
+    auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(end - start);
+    std::cout << "[>] Octree import took: " << duration.count() << " ms\n";
+    std::cout << "[>] Octree import (excluding mesh load): " << duration.count() - meshImportTime << " ms\n";
 }
