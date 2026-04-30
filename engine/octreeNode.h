@@ -35,10 +35,10 @@ private:
 
    /* children assigned in order left to right, front to back, bottom to top
        -------------
-      /__7__/__6__ /|
+      /__6__/__7__ /|
      /     /      / |
      -------------  |
-    |  3  | / 2  |  |
+    |  2  | / 3  |  |
     |_____|/_____|  |
     |  0  | / 1  | /
     |_____|/_____|/      */
