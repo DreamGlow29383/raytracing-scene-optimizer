@@ -81,4 +81,6 @@ private:
     glm::vec3 computeDensityColor(size_t faceCount);
     glm::vec3 computeDepthColor(int depth);
     glm::vec3 computeRandomColor();
+
+    void renderBenchmark();
 };

@@ -4,6 +4,7 @@
 #include <math.h>
 #include <algorithm>
 #include <chrono>
+#include <random>
 
 #include <GL/glew.h>
 #include <GL/freeglut.h>
@@ -45,6 +46,16 @@ Mesh::Mesh(std::vector<Face*> faces, std::vector<Vertex*> vertices)
 
     buildExpandedBuffers();
     updateColorVBO(0);
+
+    // ---------- TO REMOVE ---------------
+    // Pick ~30% of leaf nodes randomly
+    std::vector<OctreeNode*> shuffled = _leafNodes;
+    std::shuffle(shuffled.begin(), shuffled.end(), std::default_random_engine(std::rand()));
+    int count = std::max(1, (int)(shuffled.size() * 0.01f));
+    _nodesHit.assign(shuffled.begin(), shuffled.begin() + count);
+
+    // Pick a random face
+    _faceHit = _faces[std::rand() % _faces.size()];
 }
 
 Mesh::Mesh(std::vector<Face*> faces, std::vector<Vertex*> vertices, OctreeNode* octreeRoot) {
@@ -83,6 +94,16 @@ Mesh::Mesh(std::vector<Face*> faces, std::vector<Vertex*> vertices, OctreeNode* 
 
     buildExpandedBuffers();
     updateColorVBO(0);
+
+    // ---------- TO REMOVE ---------------
+    // Pick ~30% of leaf nodes randomly
+    std::vector<OctreeNode*> shuffled = _leafNodes;
+    std::shuffle(shuffled.begin(), shuffled.end(), std::default_random_engine(std::rand()));
+    int count = std::max(1, (int)(shuffled.size() * 0.01f));
+    _nodesHit.assign(shuffled.begin(), shuffled.begin() + count);
+
+    // Pick a random face
+    _faceHit = _faces[std::rand() % _faces.size()];
 }
 
 Mesh::~Mesh()
@@ -113,6 +134,11 @@ void Mesh::render(glm::mat4 cameraInverse)
     glMatrixMode(GL_MODELVIEW);
     glLoadMatrixf(glm::value_ptr(cameraInverse * this->getWC()));
 
+    if (eng.getBenchmarkMode() > 0) {
+        renderBenchmark();
+        return;
+    }
+
     glBindBuffer(GL_ARRAY_BUFFER, expandedVertexVBO);
     glVertexPointer(3, GL_FLOAT, 0, nullptr);
     glEnableClientState(GL_VERTEX_ARRAY);
@@ -128,7 +154,7 @@ void Mesh::render(glm::mat4 cameraInverse)
 
         glDisable(GL_LIGHTING);
     }
-    
+
     glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
 
     if (eng.getColoringMode() == 0) {
@@ -370,4 +396,57 @@ void Mesh::buildExpandedBuffers() {
 
     glBindBuffer(GL_ARRAY_BUFFER, 0);
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
+}
+
+void Mesh::renderBenchmark()
+{
+    glPushAttrib(GL_ALL_ATTRIB_BITS);
+    glDisable(GL_LIGHTING);
+
+    static const int edges[12][2] = {
+        {0,1},{1,2},{2,3},{3,0},
+        {4,5},{5,6},{6,7},{7,4},
+        {0,4},{1,5},{2,6},{3,7}
+    };
+
+    if (!_nodesHit.empty()) {
+        glLineWidth(2.0f);
+        glColor3f(0.2f, 0.4f, 1.0f);
+        glBegin(GL_LINES);
+        for (OctreeNode* node : _nodesHit) {
+            if (!node) continue;
+            glm::vec3 mn = node->getLowerBounds();
+            glm::vec3 mx = node->getUpperBounds();
+            glm::vec3 c[8] = {
+                {mn.x,mn.y,mn.z},{mx.x,mn.y,mn.z},{mx.x,mx.y,mn.z},{mn.x,mx.y,mn.z},
+                {mn.x,mn.y,mx.z},{mx.x,mn.y,mx.z},{mx.x,mx.y,mx.z},{mn.x,mx.y,mx.z}
+            };
+            for (auto& e : edges)
+                glVertex3fv(&c[e[0]].x), glVertex3fv(&c[e[1]].x);
+        }
+        glEnd();
+    }
+
+    if (_faceHit) {
+        glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+        glColor3f(0.0f, 0.8f, 1.0f);
+        glBegin(GL_TRIANGLES);
+        for (unsigned int idx : _faceHit->_indices) {
+            Vertex* v = _vertices[idx];
+            glVertex3f(v->x, v->y, v->z);
+        }
+        glEnd();
+
+        glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+        glLineWidth(3.0f);
+        glColor3f(1.0f, 1.0f, 1.0f);
+        glBegin(GL_TRIANGLES);
+        for (unsigned int idx : _faceHit->_indices) {
+            Vertex* v = _vertices[idx];
+            glVertex3f(v->x, v->y, v->z);
+        }
+        glEnd();
+    }
+
+    glPopAttrib();
 }

@@ -297,6 +297,9 @@ public:
     void setColoringMode(int mode);
     int getColoringMode() const { return coloring_mode; }
 
+    void setBenchmarkMode(int mode) { benchmark_mode = mode; }
+    int getBenchmarkMode() const { return benchmark_mode; }
+
     void setShowColoringSubmenu(bool show) { show_coloring_submenu = show; }
     bool getShowColoringSubmenu() const { return show_coloring_submenu; }
 
@@ -345,8 +348,9 @@ private:
     std::unordered_map<OctreeNode*, glm::vec3> nodeColors;
 
     bool show_node_boundaries = false;
-    int coloring_mode = 0;
     bool show_coloring_submenu = false;
+    int coloring_mode = 0;
+    int benchmark_mode = 0;
 
     void addNode(Node* node);
     void addNodeTo(Node* parent, Node* node);
