@@ -305,6 +305,8 @@ void keyboardUpCallback(unsigned char key, int mouseX, int mouseY)
 }
 
 void mouseCallback(int button, int state, int x, int y) {
+	ImGui_ImplGLUT_MouseFunc(button, state, x, y);
+
 	Eng::Base& eng = Eng::Base::getInstance();
 	if (button == GLUT_LEFT_BUTTON && state == GLUT_DOWN) {
 		std::cout << "Mouse (left) clicked at: " << x << ", " << y << std::endl;
@@ -339,11 +341,6 @@ void specialCallback(int key, int mouseX, int mouseY)
 void specialUpCallback(int key, int mouseX, int mouseY) 
 {
 	ImGui_ImplGLUT_SpecialUpFunc(key, mouseX, mouseY);
-}
-
-void mouseCallback(int button, int state, int x, int y)
-{
-	ImGui_ImplGLUT_MouseFunc(button, state, x, y);
 }
 
 void mouseWheelCallback(int wheel, int direction, int x, int y)

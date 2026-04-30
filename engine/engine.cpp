@@ -707,7 +707,6 @@ void ENG_API Eng::Base::importOctree(const std::string& infilepath) {
     std::cout << "[>] Octree import took: " << duration.count() << " ms\n";
     std::cout << "[>] Octree import (excluding mesh load): " << duration.count() - meshImportTime << " ms\n";
 }
-}
 
 void ENG_API Eng::Base::castRaySurface(int mouseX, int mouseY) {
    Scene* scene = this->getCurrentScene();
