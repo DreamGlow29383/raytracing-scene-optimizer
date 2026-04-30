@@ -50,7 +50,7 @@
       <PreprocessorDefinitions>_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <LanguageStandard>stdcpp20</LanguageStandard>
-      <AdditionalIncludeDirectories>..\engine;..\dependencies\glm\include;</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>..\engine;..\dependencies\glm\include;..\dependencies\imgui</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -71,7 +71,7 @@
       <PreprocessorDefinitions>NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <LanguageStandard>stdcpp20</LanguageStandard>
-      <AdditionalIncludeDirectories>..\engine;..\dependencies\glm\include;</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>..\engine;..\dependencies\glm\include;..\dependencies\imgui</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -86,6 +86,10 @@
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="..\dependencies\imgui\imgui.cpp" />
+    <ClCompile Include="..\dependencies\imgui\imgui_draw.cpp" />
+    <ClCompile Include="..\dependencies\imgui\imgui_tables.cpp" />
+    <ClCompile Include="..\dependencies\imgui\imgui_widgets.cpp" />
     <ClCompile Include="main.cpp" />
   </ItemGroup>
   <ItemGroup>

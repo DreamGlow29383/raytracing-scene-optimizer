@@ -18,6 +18,11 @@
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/type_ptr.hpp>
 
+#include <imgui.h>
+#include <ImGuiFileDialog.h>
+#include <backends/imgui_impl_glut.h>
+#include <backends/imgui_impl_opengl3.h>
+
 int windowId = NULL;
 int _width;
 int _height;
@@ -33,6 +38,126 @@ float fps = 0;
 void calculateFPS();
 void printNodeHierarchy(Node* node, const std::string& prefix = "", bool isLast = false, bool isRoot = true);
 float getDeltaTime();
+
+void DrawMenuBar() {
+	Eng::Base& eng = Eng::Base::getInstance();
+
+	if (ImGui::BeginMainMenuBar()) {
+		// --- File Menu ---
+		if (ImGui::BeginMenu("File")) {
+			IGFD::FileDialogConfig config; config.path = ".";
+
+			if (ImGui::MenuItem("Generate")) {
+				ImGuiFileDialog::Instance()->OpenDialog(
+					"ChooseFileDlgKey",
+					"Select a File to Generate",
+					".obj,.gltf,.glb,.fbx",
+					config
+				);
+			}
+
+			if (ImGui::MenuItem("Import")) {
+				ImGuiFileDialog::Instance()->OpenDialog(
+					"ImportFileDlgKey",
+					"Import Octree-Optimized Model",
+					".oct",
+					config
+				);
+			}
+
+			if (ImGui::MenuItem("Export")) {
+				IGFD::FileDialogConfig config;
+				config.path = ".";
+				config.flags = ImGuiFileDialogFlags_ConfirmOverwrite;
+				ImGuiFileDialog::Instance()->OpenDialog(
+					"ExportFileDlgKey",           
+					"Export Octree File",         
+					".oct",                       
+					config
+				);
+			}
+			ImGui::EndMenu();
+		}
+
+
+		// --- View Menu ---
+		if (ImGui::BeginMenu("View")) {
+			if (ImGui::MenuItem("Node Boundaries", nullptr, eng.getShowNodeBoundaries())) {
+				eng.setShowNodeBoundaries(!eng.getShowNodeBoundaries());
+			}
+
+			if (ImGui::BeginMenu("Coloring")) {
+				if (ImGui::MenuItem("None", nullptr, eng.getColoringMode() == 0)) {
+					eng.setColoringMode(0);
+				}
+				if (ImGui::MenuItem("Depth", nullptr, eng.getColoringMode() == 1)) {
+					eng.setColoringMode(1);
+				}
+				if (ImGui::MenuItem("Faces", nullptr, eng.getColoringMode() == 2)) {
+					eng.setColoringMode(2);
+				}
+				if (ImGui::MenuItem("Node", nullptr, eng.getColoringMode() == 3)) {
+					eng.setColoringMode(3);
+				}
+				ImGui::EndMenu();
+			}
+
+			ImGui::EndMenu();
+		}
+
+		std::string fpsText = "FPS: " + std::to_string((int)fps);
+		ImVec2 textSize = ImGui::CalcTextSize(fpsText.c_str());
+
+		float textX = _width - textSize.x - 10;
+
+		ImGui::SetCursorPosX(textX);
+		ImGui::TextColored(ImVec4(0.5f, 1.0f, 0.5f, 1.0f), "%s", fpsText.c_str());
+
+		ImGui::EndMainMenuBar();
+
+		ImVec2 maxSize = ImVec2(_width, _height);
+		ImVec2 minSize = ImVec2(_width / 2, _height / 2);
+		if (ImGuiFileDialog::Instance()->Display("ChooseFileDlgKey", ImGuiWindowFlags_NoCollapse, minSize, maxSize)) {
+			if (ImGuiFileDialog::Instance()->IsOk()) {
+				std::string filePath = ImGuiFileDialog::Instance()->GetFilePathName();
+				std::cout << "Generate selected: " << filePath << std::endl;
+				if (eng.getCurrentScene()->getNrOfChildren() > 2)
+					delete eng.getCurrentScene()->removeChild(2);
+				eng.addNodeFromFile(filePath);
+				eng.getCurrentScene()->computeRenderList();
+				printNodeHierarchy(eng.getCurrentScene());
+			}
+			ImGuiFileDialog::Instance()->Close();
+		}
+
+		if (ImGuiFileDialog::Instance()->Display("ImportFileDlgKey", ImGuiWindowFlags_NoCollapse, minSize, maxSize)) {
+			if (ImGuiFileDialog::Instance()->IsOk()) {
+				std::string filePath = ImGuiFileDialog::Instance()->GetFilePathName();
+				std::cout << "Importing: " << filePath << std::endl;
+				if (eng.getCurrentScene()->getNrOfChildren() > 2)
+					delete eng.getCurrentScene()->removeChild(2);
+				eng.importOctree(filePath);
+				eng.getCurrentScene()->computeRenderList();
+				printNodeHierarchy(eng.getCurrentScene());
+			}
+			ImGuiFileDialog::Instance()->Close();
+		}
+
+		if (ImGuiFileDialog::Instance()->Display("ExportFileDlgKey", ImGuiWindowFlags_NoCollapse, minSize, maxSize)) {
+			if (ImGuiFileDialog::Instance()->IsOk()) {
+				std::string filePath = ImGuiFileDialog::Instance()->GetFilePathName();
+
+				if (filePath.substr(filePath.find_last_of(".") + 1) != "oct") {
+					filePath += ".oct";
+				}
+
+				std::cout << "Exporting to: " << filePath << std::endl;
+				eng.exportOctree(filePath);
+			}
+			ImGuiFileDialog::Instance()->Close();
+		}
+	}
+}
 
 void displayCallback() 
 {
@@ -55,6 +180,11 @@ void displayCallback()
 		printNodeHierarchy(currentScene);
 	}
 
+	ImGui_ImplOpenGL3_NewFrame();
+	ImGui_ImplGLUT_NewFrame();
+	ImGui::NewFrame();
+	ImGuiIO& io = ImGui::GetIO();
+
 	//////////////////////////
 	// 3D Rendering:
 
@@ -62,11 +192,28 @@ void displayCallback()
 	glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
+	// Setup
+	glEnable(GL_LIGHTING);
+	glEnable(GL_DEPTH_TEST);
+	glEnable(GL_NORMALIZE);
+	glEnable(GL_CULL_FACE);
+
+	glMatrixMode(GL_MODELVIEW);
+
 	// Calculate FPS
 	calculateFPS();
 
 	currentScene->render(currentScene->getCurrentCamera()->computeInverse());
+	
+	//////////////////////////
+	// ImGui Interface
 
+	DrawMenuBar();
+
+	ImGui::Render();
+	ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
+
+	/*
 	//////////////////////////
     // 2D Text Rendering:
 
@@ -113,10 +260,8 @@ void displayCallback()
 		verticalShift -= 20.0f;
 	}
 
-	glEnable(GL_LIGHTING);
-	glEnable(GL_DEPTH_TEST);
-
-	glMatrixMode(GL_MODELVIEW);
+	//////////////////////////
+	*/
 
 	glutSwapBuffers();
 	glutPostWindowRedisplay(windowId);
@@ -124,6 +269,8 @@ void displayCallback()
 
 void reshapeCallback(int width, int height)
 {
+	ImGui_ImplGLUT_ReshapeFunc(width, height);
+
 	_width = width;
 	_height = height;
 
@@ -137,6 +284,8 @@ void reshapeCallback(int width, int height)
 
 void keyboardCallback(unsigned char key, int mouseX, int mouseY)
 {
+	ImGui_ImplGLUT_KeyboardFunc(key, mouseX, mouseY);
+
 	Eng::Base& eng = Eng::Base::getInstance();
 	Scene* currentScene = eng.getCurrentScene();
 	currentScene->fireKeyPressedEvents(key);
@@ -144,7 +293,10 @@ void keyboardCallback(unsigned char key, int mouseX, int mouseY)
 	glutPostWindowRedisplay(windowId);
 }
 
-void keyboardUpCallback(unsigned char key, int mouseX, int mouseY) {
+void keyboardUpCallback(unsigned char key, int mouseX, int mouseY) 
+{
+	ImGui_ImplGLUT_KeyboardUpFunc(key, mouseX, mouseY);
+
 	Eng::Base& eng = Eng::Base::getInstance();
 	Scene* currentScene = eng.getCurrentScene();
 	currentScene->fireKeyReleasedEvents(key);
@@ -168,6 +320,8 @@ void mouseCallback(int button, int state, int x, int y) {
 
 void specialCallback(int key, int mouseX, int mouseY)
 {
+	ImGui_ImplGLUT_SpecialFunc(key, mouseX, mouseY);
+
 	switch (key)
 	{
 	case GLUT_KEY_CTRL_L:
@@ -180,6 +334,31 @@ void specialCallback(int key, int mouseX, int mouseY)
 	}
 
 	glutPostWindowRedisplay(windowId);
+}
+
+void specialUpCallback(int key, int mouseX, int mouseY) 
+{
+	ImGui_ImplGLUT_SpecialUpFunc(key, mouseX, mouseY);
+}
+
+void mouseCallback(int button, int state, int x, int y)
+{
+	ImGui_ImplGLUT_MouseFunc(button, state, x, y);
+}
+
+void mouseWheelCallback(int wheel, int direction, int x, int y)
+{
+	ImGui_ImplGLUT_MouseWheelFunc(wheel, direction, x, y);
+}
+
+void motionCallback(int x, int y)
+{
+	ImGui_ImplGLUT_MotionFunc(x, y);
+}
+
+void passiveMotionCallback(int x, int y)
+{
+	ImGui_ImplGLUT_MotionFunc(x, y);
 }
 
 void calculateFPS() {

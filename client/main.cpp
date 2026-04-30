@@ -34,6 +34,8 @@ void cameraRightEvent(int nodeId, bool keyDown, glm::mat4 nodeTransform);
 void cameraUpEvent(int nodeId, bool keyDown, glm::mat4 nodeTransform);
 void cameraDownEvent(int nodeId, bool keyDown, glm::mat4 nodeTransform);
 
+void DrawMenuBar();
+
 std::map<char, bool> cameraKeys;
 int selectedCamera = 0;
 
@@ -54,12 +56,12 @@ int main(int argc, char *argv[])
 
 	int id = eng.createScene();
 	eng.setCurrentScene(id);
-	eng.setSceneAmbient(1.0f, 1.0f, 1.0f, 1.0f);
+	eng.setSceneAmbient(0.8f, 0.8f, 0.8f, 1.0f);
 
 	Eng::CameraConfig cameraConfig;
 	cameraConfig.type = Eng::CameraType::PERSPECTIVE;
 	cameraConfig.fov = glm::radians(45.0f);
-	cameraConfig.nearPlane = 1.0f;
+	cameraConfig.nearPlane = 0.1f;
 	cameraConfig.farPlane = 100.0f;
 	int cameraId = eng.addNodeCamera(cameraConfig);
 	glm::mat4 cameraPos = glm::translate(glm::mat4(1.0f), glm::vec3(0.0f, 3.0f, 5.0f));
@@ -80,15 +82,15 @@ int main(int argc, char *argv[])
 	glm::mat4 lightPos = glm::translate(glm::mat4(1.0f), glm::vec3(5.0f, 5.0f, 5.0f));
 	eng.setNodeTransform(lightId, lightPos);
 
-	eng.addNodeFromFile(modelPath+"cube.glb");
+	//eng.addNodeFromFile(modelPath+"suzanne.glb");
 
-	eng.bindSceneEvent(3, moveCameraEvent);
-	eng.bindSceneEvent('w', 3, cameraUpEvent);
-	eng.bindSceneEvent('a', 3, cameraLeftEvent);
-	eng.bindSceneEvent('s', 3, cameraDownEvent);
-	eng.bindSceneEvent('d', 3, cameraRightEvent);
+	eng.bindSceneEvent(1, moveCameraEvent);
+	eng.bindSceneEvent('w', 1, cameraUpEvent);
+	eng.bindSceneEvent('a', 1, cameraLeftEvent);
+	eng.bindSceneEvent('s', 1, cameraDownEvent);
+	eng.bindSceneEvent('d', 1, cameraRightEvent);
 
-	eng.exportOctree("octree.oct");
+	//eng.exportOctree("octree.oct");
 	eng.run();
 
 	eng.free();
@@ -133,7 +135,7 @@ void moveCameraEvent(int nodeId, float deltaTime, glm::mat4 nodeTransform) {
 	if (cameraKeys['w']) {
 		glm::vec3 toTarget = cameraTarget - cameraPos;
 		float distance = glm::length(toTarget);
-		if (distance > 2.0f) {
+		if (distance > 0.5f) {
 			glm::vec3 direction = glm::normalize(toTarget);
 			cameraPos += direction * movementSpeed * deltaTime;
 		}

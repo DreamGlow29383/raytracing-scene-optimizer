@@ -231,6 +231,8 @@ public:
      */
     int addNodeCamera(CameraConfig config);
 
+    void removeNode(int id);
+
     /**
      * @brief Loads a 3D model from file and adds it to the scene.
      * @param parent The ID of the parent node.
@@ -287,6 +289,16 @@ public:
     int getWindowId();
 
     void exportOctree(const std::string& outfilepath);
+    void importOctree(const std::string& infilepath);
+
+    void setShowNodeBoundaries(bool show) { show_node_boundaries = show; }
+    bool getShowNodeBoundaries() const { return show_node_boundaries; }
+
+    void setColoringMode(int mode);
+    int getColoringMode() const { return coloring_mode; }
+
+    void setShowColoringSubmenu(bool show) { show_coloring_submenu = show; }
+    bool getShowColoringSubmenu() const { return show_coloring_submenu; }
 
     void castRaySurface(int x, int y);
 
@@ -331,6 +343,10 @@ private:
     std::vector<Face*> _facesHit;
     std::vector<OctreeNode*> _nodesHit;
     std::unordered_map<OctreeNode*, glm::vec3> nodeColors;
+
+    bool show_node_boundaries = false;
+    int coloring_mode = 0;
+    bool show_coloring_submenu = false;
 
     void addNode(Node* node);
     void addNodeTo(Node* parent, Node* node);

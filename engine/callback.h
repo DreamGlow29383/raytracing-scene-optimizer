@@ -41,11 +41,12 @@ void keyboardUpCallback(unsigned char key, int mouseX, int mouseY);
  */
 void specialCallback(int key, int mouseX, int mouseY);
 
-/**
- * @brief Callback function for mouse click
- * @param button The code of the button pressed.
- * @param state indicates whether the callback was due to a release or press.
- * @param mouseX The X position of the mouse when the key was pressed.
- * @param mouseY The Y position of the mouse when the key was pressed.
- */
+void specialUpCallback(int key, int mouseX, int mouseY);
+
 void mouseCallback(int button, int state, int x, int y);
+
+void mouseWheelCallback(int wheel, int direction, int x, int y);
+
+void motionCallback(int x, int y);
+
+void passiveMotionCallback(int x, int y);

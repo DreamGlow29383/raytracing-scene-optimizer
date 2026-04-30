@@ -5,8 +5,8 @@
 #include <vector>
 #include <glm/glm.hpp>
 
-static int max_faces = 10;
-static int max_depth = 10;
+static int MAX_FACES = 10;
+static int MAX_DEPTH = 10;
 
 class OctreeNode {
 public:
@@ -17,29 +17,29 @@ public:
     void insert(Face* face);
 
     bool check(const Face* face);
-    bool isSplit();
     void render(glm::mat4 cameraInverse);
 
     glm::vec3 getLowerBounds() const { return lowerBoundsCorner; }
     glm::vec3 getUpperBounds() const { return upperBoundsCorner; }
     std::vector<OctreeNode*> getChildren() const { return children; }
+    void addChild(OctreeNode* node);
     bool hasChildren() const { return !children.empty(); }
     std::vector<Face*> getFaces() const { return faces; }
     bool hasFaces() const { return !faces.empty(); }
+    void setFaces(std::vector<Face*> faces) { this->faces = faces; }
     int getDepth() const { return node_depth; }
     int getId() const { return id; }
 private:
 
     void split();
-    bool m_isSplit = false;
     std::vector<Face*> faces;
 
    /* children assigned in order left to right, front to back, bottom to top
        -------------
-      /__7__/__6__ /|
+      /__6__/__7__ /|
      /     /      / |
      -------------  |
-    |  3  | / 2  |  |
+    |  2  | / 3  |  |
     |_____|/_____|  |
     |  0  | / 1  | /
     |_____|/_____|/      */

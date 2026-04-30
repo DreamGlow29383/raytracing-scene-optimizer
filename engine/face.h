@@ -15,6 +15,7 @@ struct Vertex
 
 struct Face
 {
+	uint32_t _id;
 	std::vector<unsigned int> _indices;
 	std::vector<Vertex*> _vertices;
 };

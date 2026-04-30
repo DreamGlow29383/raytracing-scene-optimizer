@@ -6,7 +6,6 @@
 
 
 OctreeNode::OctreeNode(std::vector<Vertex*> allVertices, std::vector<Face*> allFaces) {
-
     glm::vec3 lowerCorner = glm::vec3(allVertices[0]->x, allVertices[0]->y, allVertices[0]->z);
     glm::vec3 upperCorner = glm::vec3(allVertices[0]->x, allVertices[0]->y, allVertices[0]->z);
 
@@ -29,7 +28,6 @@ OctreeNode::OctreeNode(std::vector<Vertex*> allVertices, std::vector<Face*> allF
     lowerBoundsCorner = lowerCorner;
     upperBoundsCorner = upperCorner;
 
-    // make the box slightly larger than the mesh
     const float EPSILON = 0.01f;
 
     lowerBoundsCorner.x -= EPSILON;
@@ -71,7 +69,11 @@ OctreeNode::OctreeNode(glm::vec3 lowerCorner, glm::vec3 upperCorner, int depth, 
     this->id = id;
 }
 
-OctreeNode::~OctreeNode() {}
+OctreeNode::~OctreeNode() {
+    for (OctreeNode* child : children)
+        delete(child);
+    children.clear();
+}
 
 void OctreeNode::split() {
 
@@ -118,16 +120,15 @@ void OctreeNode::split() {
         std::cout << "Warning: not all faces were inherited by children" << std::endl;
     
     faces.clear();
-    m_isSplit = true;
 }
 
 void OctreeNode::insert(Face* face) {
-    if (m_isSplit) {
+    if (hasChildren()) {
         for (OctreeNode* child : children)
             if (child->check(face))
                 child->insert(face);
     }
-    else if (this->faces.size() >= max_faces && node_depth < max_depth) {
+    else if (this->faces.size() >= MAX_FACES && node_depth < MAX_DEPTH) {
         split();
         for (OctreeNode* child : children)
             if (child->check(face))
@@ -194,6 +195,6 @@ bool OctreeNode::check(const Face* face) {
     return false;
 }
 
-bool OctreeNode::isSplit() {
-    return this->m_isSplit;
+void OctreeNode::addChild(OctreeNode* node) {
+    children.push_back(node);
 }
