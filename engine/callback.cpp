@@ -105,6 +105,19 @@ void DrawMenuBar() {
 			ImGui::EndMenu();
 		}
 
+		if (ImGui::BeginMenu("Benchmark")) {
+			if (ImGui::MenuItem("Start Optimized", nullptr, eng.getBenchmarkMode() == 1)) {
+				eng.setBenchmarkMode(1);
+			}
+			if (ImGui::MenuItem("Start Brute Force", nullptr, eng.getBenchmarkMode() == 2)) {
+				eng.setBenchmarkMode(2);
+			}
+			if (ImGui::MenuItem("Stop", nullptr, eng.getBenchmarkMode() == 0)) {
+				eng.setBenchmarkMode(0);
+			}
+			ImGui::EndMenu();
+		}
+
 		std::string fpsText = "FPS: " + std::to_string((int)fps);
 		ImVec2 textSize = ImGui::CalcTextSize(fpsText.c_str());
 
