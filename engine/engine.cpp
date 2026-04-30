@@ -8,6 +8,7 @@
 #include "importer.h"
 #include "frame_event.h"
 #include "byte_util.h"
+#include "face.h"
 
 #define GLM_ENABLE_EXPERIMENTAL
 #include <glm/gtx/intersect.hpp>
@@ -73,12 +74,6 @@ Eng::Base ENG_API &Eng::Base::getInstance()
 
 bool ENG_API Eng::Base::init(int argc, char* argv[])
 {
-    std::cout 
-    << "OGL Graphics Engine,\n"
-    << "Ruben Barros Freitas,\n"
-    << "Lorenzo Vanina,\n"
-    << "Davide Villa.\n"
-    << std::endl;
 
     FreeImage_Initialise();
 
@@ -532,183 +527,194 @@ struct PairHash {
 };
 
 void ENG_API Eng::Base::importOctree(const std::string& infilepath) {
-    auto start = std::chrono::high_resolution_clock::now();
-    std::ifstream file(infilepath, std::ios::binary);
+   auto start = std::chrono::high_resolution_clock::now();
+   std::ifstream file(infilepath, std::ios::binary);
 
-    if (!file.is_open())
-        throw std::runtime_error("Failed to open file: " + infilepath);
+   if (!file.is_open())
+      throw std::runtime_error("Failed to open file: " + infilepath);
 
-    std::vector<std::byte> fileData(std::filesystem::file_size(infilepath));
-    file.read(reinterpret_cast<char*>(fileData.data()), fileData.size());
-    file.close();
+   std::vector<std::byte> fileData(std::filesystem::file_size(infilepath));
+   file.read(reinterpret_cast<char*>(fileData.data()), fileData.size());
+   file.close();
 
-    size_t offset = 0;
+   size_t offset = 0;
 
-    uint32_t magic;
-    readBytes(fileData, offset, magic);
-    magic = be32toh(magic);
+   uint32_t magic;
+   readBytes(fileData, offset, magic);
+   magic = be32toh(magic);
 
-    if (magic != 0x4F435452)
-        throw std::runtime_error("Invalid file format: Wrong magic number");
+   if (magic != 0x4F435452)
+      throw std::runtime_error("Invalid file format: Wrong magic number");
 
-    uint8_t version;
-    readBytes(fileData, offset, version);
+   uint8_t version;
+   readBytes(fileData, offset, version);
 
-    if (version != 1)
-        throw std::runtime_error("Unsupported file version: " + std::to_string(version));
+   if (version != 1)
+      throw std::runtime_error("Unsupported file version: " + std::to_string(version));
 
-    uint8_t max_depth;
-    readBytes(fileData, offset, max_depth);
+   uint8_t max_depth;
+   readBytes(fileData, offset, max_depth);
 
-    std::cout << "Octree file info:" << std::endl;
-    std::cout << "  Version: " << (int)version << std::endl;
-    std::cout << "  Max Depth: " << (int)max_depth << std::endl;
+   std::cout << "Octree file info:" << std::endl;
+   std::cout << "  Version: " << (int)version << std::endl;
+   std::cout << "  Max Depth: " << (int)max_depth << std::endl;
 
-    uint8_t nameLength;
-    readBytes(fileData, offset, nameLength);
+   uint8_t nameLength;
+   readBytes(fileData, offset, nameLength);
 
-    std::string meshName;
-    readString(fileData, offset, meshName, nameLength);
+   std::string meshName;
+   readString(fileData, offset, meshName, nameLength);
 
-    uint8_t padding = (4 - (nameLength % 4)) % 4;
-    offset += padding;
+   uint8_t padding = (4 - (nameLength % 4)) % 4;
+   offset += padding;
 
-    std::cout << "  Mesh Name: " << meshName << std::endl;
+   std::cout << "  Mesh Name: " << meshName << std::endl;
 
-    std::vector<NodeData> nodes;
+   std::vector<NodeData> nodes;
 
-    while (offset < fileData.size()) {
-        uint8_t node_depth;
-        uint64_t node_id;
-        uint32_t n_faces;
-        float upperX, upperY, upperZ;
-        float lowerX, lowerY, lowerZ;
+   while (offset < fileData.size()) {
+      uint8_t node_depth;
+      uint64_t node_id;
+      uint32_t n_faces;
+      float upperX, upperY, upperZ;
+      float lowerX, lowerY, lowerZ;
 
-        readBytes(fileData, offset, node_depth);
-        readBytes(fileData, offset, node_id);
-        readBytes(fileData, offset, n_faces);
+      readBytes(fileData, offset, node_depth);
+      readBytes(fileData, offset, node_id);
+      readBytes(fileData, offset, n_faces);
 
-        readBytes(fileData, offset, upperX);
-        readBytes(fileData, offset, upperY);
-        readBytes(fileData, offset, upperZ);
+      readBytes(fileData, offset, upperX);
+      readBytes(fileData, offset, upperY);
+      readBytes(fileData, offset, upperZ);
 
-        readBytes(fileData, offset, lowerX);
-        readBytes(fileData, offset, lowerY);
-        readBytes(fileData, offset, lowerZ);
+      readBytes(fileData, offset, lowerX);
+      readBytes(fileData, offset, lowerY);
+      readBytes(fileData, offset, lowerZ);
 
-        node_id = be64toh(node_id);
-        n_faces = be32toh(n_faces);
+      node_id = be64toh(node_id);
+      n_faces = be32toh(n_faces);
 
-        std::vector<uint32_t> faceIndices;
-        for (uint32_t f = 0; f < n_faces; ++f) {
-            uint32_t index;
-            readBytes(fileData, offset, index);
-            faceIndices.push_back(be32toh(index));
-        }
+      std::vector<uint32_t> faceIndices;
+      for (uint32_t f = 0; f < n_faces; ++f) {
+         uint32_t index;
+         readBytes(fileData, offset, index);
+         faceIndices.push_back(be32toh(index));
+      }
 
-        NodeData data = NodeData(node_id, node_depth,
-            glm::vec3(upperX, upperY, upperZ),
-            glm::vec3(lowerX, lowerY, lowerZ),
-            faceIndices);
-        nodes.push_back(data);
-    }
+      NodeData data = NodeData(node_id, node_depth,
+         glm::vec3(upperX, upperY, upperZ),
+         glm::vec3(lowerX, lowerY, lowerZ),
+         faceIndices);
+      nodes.push_back(data);
+   }
 
-    std::cout << "Total nodes loaded: " << nodes.size() << std::endl;
+   std::cout << "Total nodes loaded: " << nodes.size() << std::endl;
 
-    size_t lastSlash = infilepath.find_last_of("\\");
-    std::string directory = (lastSlash != std::string::npos)
-        ? infilepath.substr(0, lastSlash + 1)
-        : "";
+   size_t lastSlash = infilepath.find_last_of("\\");
+   std::string directory = (lastSlash != std::string::npos)
+      ? infilepath.substr(0, lastSlash + 1)
+      : "";
 
-    std::string meshpath = directory + meshName;
+   std::string meshpath = directory + meshName;
 
-    std::vector<Vertex*> outVertices;
-    std::vector<Face*> outFaces;
-    auto t0 = std::chrono::high_resolution_clock::now();
-    bool success = importFile(meshpath, outVertices, outFaces);
-    auto t1 = std::chrono::high_resolution_clock::now();
-    auto meshImportTime = duration_cast<std::chrono::milliseconds>(t1 - t0).count();
+   std::vector<Vertex*> outVertices;
+   std::vector<Face*> outFaces;
+   auto t0 = std::chrono::high_resolution_clock::now();
+   bool success = importFile(meshpath, outVertices, outFaces);
+   auto t1 = std::chrono::high_resolution_clock::now();
+   auto meshImportTime = duration_cast<std::chrono::milliseconds>(t1 - t0).count();
 
-    std::unordered_map<std::pair<uint64_t, uint8_t>, OctreeNode*, PairHash> parentlessNodes;
-    std::unordered_map<std::pair<uint64_t, uint8_t>, std::vector<OctreeNode*>, PairHash> parentBuffer;
+   std::unordered_map<std::pair<uint64_t, uint8_t>, OctreeNode*, PairHash> parentlessNodes;
+   std::unordered_map<std::pair<uint64_t, uint8_t>, std::vector<OctreeNode*>, PairHash> parentBuffer;
 
-    for (const NodeData& data : nodes) {
-        uint8_t currentId = data.id & 0b111;
-        OctreeNode* newNode = new OctreeNode(data.lowerCorner, data.upperCorner, data.depth, currentId);
+   for (const NodeData& data : nodes) {
+      uint8_t currentId = data.id & 0b111;
+      OctreeNode* newNode = new OctreeNode(data.lowerCorner, data.upperCorner, data.depth, currentId);
 
-        std::vector<Face*> nodeFaces;
-        for (uint32_t face_id : data.faceIndices)
-            nodeFaces.push_back(outFaces[face_id]);
+      std::vector<Face*> nodeFaces;
+      for (uint32_t face_id : data.faceIndices)
+         nodeFaces.push_back(outFaces[face_id]);
 
-        newNode->setFaces(nodeFaces);
+      newNode->setFaces(nodeFaces);
 
-        auto key = std::make_pair(data.id, data.depth);
-        parentlessNodes.emplace(key, newNode);
-    }
+      auto key = std::make_pair(data.id, data.depth);
+      parentlessNodes.emplace(key, newNode);
+   }
 
-    OctreeNode* root = nullptr;
+   OctreeNode* root = nullptr;
 
-    while (!parentlessNodes.empty()) {
-        auto it = parentlessNodes.begin();
-        uint8_t currentId = it->first.first & 0b111;
-        uint64_t parentId = it->first.first >> 3;
-        uint8_t depth = it->first.second - 1;
+   while (!parentlessNodes.empty()) {
+      auto it = parentlessNodes.begin();
+      uint8_t currentId = it->first.first & 0b111;
+      uint64_t parentId = it->first.first >> 3;
+      uint8_t depth = it->first.second - 1;
 
-        std::pair<uint64_t, uint8_t> key = std::make_pair(parentId, depth);
+      std::pair<uint64_t, uint8_t> key = std::make_pair(parentId, depth);
 
-        if (parentlessNodes.size() == 1 && it->first.second == 0) {
-            root = it->second;
-            break;
-        }
+      if (parentlessNodes.size() == 1 && it->first.second == 0) {
+         root = it->second;
+         break;
+      }
 
-        if (it->first.second == 0)
-            continue;
+      if (it->first.second == 0)
+         continue;
 
-        parentBuffer[key].push_back(it->second);
-        parentlessNodes.erase(it);
+      parentBuffer[key].push_back(it->second);
+      parentlessNodes.erase(it);
 
-        if (parentBuffer[key].size() == 8) {
-            std::vector<OctreeNode*> children = parentBuffer[key];
+      if (parentBuffer[key].size() == 8) {
+         std::vector<OctreeNode*> children = parentBuffer[key];
 
-            glm::vec3 lowerCorner = children[0]->getLowerBounds();
-            glm::vec3 upperCorner = children[0]->getUpperBounds();
+         glm::vec3 lowerCorner = children[0]->getLowerBounds();
+         glm::vec3 upperCorner = children[0]->getUpperBounds();
 
-            for (size_t i = 1; i < children.size(); i++) {
-                glm::vec3 childLower = children[i]->getLowerBounds();
-                glm::vec3 childUpper = children[i]->getUpperBounds();
+         for (size_t i = 1; i < children.size(); i++) {
+            glm::vec3 childLower = children[i]->getLowerBounds();
+            glm::vec3 childUpper = children[i]->getUpperBounds();
 
-                lowerCorner.x = std::min(lowerCorner.x, childLower.x);
-                lowerCorner.y = std::min(lowerCorner.y, childLower.y);
-                lowerCorner.z = std::min(lowerCorner.z, childLower.z);
+            lowerCorner.x = std::min(lowerCorner.x, childLower.x);
+            lowerCorner.y = std::min(lowerCorner.y, childLower.y);
+            lowerCorner.z = std::min(lowerCorner.z, childLower.z);
 
-                upperCorner.x = std::max(upperCorner.x, childUpper.x);
-                upperCorner.y = std::max(upperCorner.y, childUpper.y);
-                upperCorner.z = std::max(upperCorner.z, childUpper.z);
-            }
+            upperCorner.x = std::max(upperCorner.x, childUpper.x);
+            upperCorner.y = std::max(upperCorner.y, childUpper.y);
+            upperCorner.z = std::max(upperCorner.z, childUpper.z);
+         }
 
-            OctreeNode* newNode = new OctreeNode(lowerCorner, upperCorner, depth, currentId);
-            for (OctreeNode* child : children)
-                newNode->addChild(child);
+         OctreeNode* newNode = new OctreeNode(lowerCorner, upperCorner, depth, currentId);
+         for (OctreeNode* child : children)
+            newNode->addChild(child);
 
-            parentlessNodes.emplace(key, newNode);
-            parentBuffer.erase(key);
-        }
-    }
+         parentlessNodes.emplace(key, newNode);
+         parentBuffer.erase(key);
+      }
+   }
 
-    if (root != nullptr) {
-        Mesh* mesh = new Mesh(outFaces, outVertices, root);
-        mesh->setName(meshName);
-        std::cout << "[+] Mesh Loaded: " << mesh->getName() << std::endl;
-        addNodeTo(getCurrentScene(), mesh);
-    }
+   if (root != nullptr) {
+      Mesh* mesh = new Mesh(outFaces, outVertices, root);
+      mesh->setName(meshName);
+      std::cout << "[+] Mesh Loaded: " << mesh->getName() << std::endl;
+      addNodeTo(getCurrentScene(), mesh);
+   }
 
-    auto end = std::chrono::high_resolution_clock::now();
-    auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(end - start);
-    std::cout << "[>] Octree import took: " << duration.count() << " ms\n";
-    std::cout << "[>] Octree import (excluding mesh load): " << duration.count() - meshImportTime << " ms\n";
+   auto end = std::chrono::high_resolution_clock::now();
+   auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(end - start);
+   std::cout << "[>] Octree import took: " << duration.count() << " ms\n";
+   std::cout << "[>] Octree import (excluding mesh load): " << duration.count() - meshImportTime << " ms\n";
+
 }
 
-void ENG_API Eng::Base::castRaySurface(int mouseX, int mouseY) {
+void ENG_API Eng::Base::castRay(glm::vec3 startPos, glm::vec3 endPos) {
+   Scene* scene = this->getCurrentScene();
+
+   std::cout << "rayStart: (" << startPos.x << ", " << startPos.y << ", " << startPos.z << ")" << std::endl;
+   std::cout << "endPos: (" << endPos.x << ", " << endPos.y << ", " << endPos.z << ")" << std::endl;
+
+   scene->setRay(startPos, endPos);
+   checkIntersection(startPos,endPos);
+}
+
+void ENG_API Eng::Base::castRay(int mouseX, int mouseY) {
    Scene* scene = this->getCurrentScene();
    Camera* camera = scene->getCurrentCamera();
    Eng::CameraConfig cameraConfig = camera->getConfig();
@@ -743,52 +749,16 @@ void ENG_API Eng::Base::castRaySurface(int mouseX, int mouseY) {
    std::cout << "rayEnd: (" << rayEnd.x << ", " << rayEnd.y << ", " << rayEnd.z << ")" << std::endl;
 
    scene->setRay(rayStart, rayEnd);
-   locateRaySurface();
+   checkIntersection(rayStart,rayEnd);
 }
 
-void ENG_API Eng::Base::castRayThrough(int mouseX, int mouseY) {
-   Scene* scene = this->getCurrentScene();
-   Camera* camera = scene->getCurrentCamera();
-   Eng::CameraConfig cameraConfig = camera->getConfig();
+void ENG_API Eng::Base::checkIntersection(glm::vec3 rayStart, glm::vec3 rayEnd) {
 
-   int viewport[4];
-   glGetIntegerv(GL_VIEWPORT, viewport);
+   Mesh* mesh = dynamic_cast<Mesh*>(getCurrentScene()->getNode(2));
+   if (mesh == nullptr) return;
 
-   glm::mat4 projMatrix = camera->getProj();
-   glm::mat4 viewMatrix = glm::inverse(camera->getTransform());
-
-   GLdouble winX = (GLdouble)mouseX;
-   GLdouble winY = (GLdouble)viewport[3] - (GLdouble)mouseY;
-
-   double modelArray[16];
-   double projArray[16];
-
-   for (int i = 0; i < 16; i++) {
-      modelArray[i] = viewMatrix[i / 4][i % 4];
-      projArray[i] = projMatrix[i / 4][i % 4];
-   }
-
-   GLdouble nearX, nearY, nearZ;
-   gluUnProject(winX, winY, 0.0f, modelArray, projArray, viewport, &nearX, &nearY, &nearZ);
-
-   GLdouble farX, farY, farZ;
-   gluUnProject(winX, winY, 1.0f, modelArray, projArray, viewport, &farX, &farY, &farZ);
-
-   glm::vec3 rayStart = glm::vec3((GLfloat)nearX, (GLfloat)nearY, (GLfloat)nearZ);
-   glm::vec3 rayEnd = glm::vec3((GLfloat)farX, (GLfloat)farY, (GLfloat)farZ);
-
-   std::cout << "rayStart: (" << rayStart.x << ", " << rayStart.y << ", " << rayStart.z << ")" << std::endl;
-   std::cout << "rayEnd: (" << rayEnd.x << ", " << rayEnd.y << ", " << rayEnd.z << ")" << std::endl;
-
-   scene->setRay(rayStart, rayEnd);
-   locateRayThrough();
-}
-
-bool ENG_API Eng::Base::rayIntersectsNode(OctreeNode* node) {
-   Scene* scene = this->getCurrentScene();
-
-   glm::vec3 rayStart = scene->getRayStart();
-   glm::vec3 rayEnd = scene->getRayEnd();   
+   mesh->clearFaceHit();
+   mesh->clearNodesHit();
 
    Vertex* rayStartVertex = new Vertex();
    rayStartVertex->x = rayStart.x;
@@ -800,116 +770,31 @@ bool ENG_API Eng::Base::rayIntersectsNode(OctreeNode* node) {
    rayEndVertex->y = rayEnd.y;
    rayEndVertex->z = rayEnd.z;
 
+   // node check
    Face* flatTriangle = new Face();
    flatTriangle->_vertices.push_back(rayStartVertex);
    flatTriangle->_vertices.push_back(rayEndVertex);
    flatTriangle->_vertices.push_back(rayEndVertex);
 
-   return node->check(flatTriangle);
-}
-
-bool ENG_API Eng::Base::rayIntersectsFace(Face* face) {
-
-   Scene* scene = this->getCurrentScene();
-
-   glm::vec3 rayStart = scene->getRayStart();
-   glm::vec3 rayEnd = scene->getRayEnd();
-
-   Vertex* rayStartVertex = new Vertex();
-   rayStartVertex->x = rayStart.x;
-   rayStartVertex->y = rayStart.y;
-   rayStartVertex->z = rayStart.z;
-
-   Vertex* rayEndVertex = new Vertex();
-   rayEndVertex->x = rayEnd.x;
-   rayEndVertex->y = rayEnd.y;
-   rayEndVertex->z = rayEnd.z;
-   
-      glm::vec3 orig(rayStart.x, rayStart.y, rayStart.z);
-      glm::vec3 dir(
-         rayEnd.x - rayStart.x,
-         rayEnd.y - rayStart.y,
-         rayEnd.z - rayStart.z
-      );
-
-      glm::vec3 intersectPos;
-
-      Vertex* v0 = face->_vertices[0];
-      Vertex* v1 = face->_vertices[1];
-      Vertex* v2 = face->_vertices[2];
-
-      glm::vec3 vert0(v0->x, v0->y, v0->z);
-      glm::vec3 vert1(v1->x, v1->y, v1->z);
-      glm::vec3 vert2(v2->x, v2->y, v2->z);
-
-      if (intersectLineTriangle(orig, dir, vert0, vert1, vert2, intersectPos)) {
-         // check if intersection is within ray segment (0 <= t <= 1)
-         float t = glm::length(intersectPos - orig) / glm::length(dir);
-         if (t >= 0 && t <= 1) {
-            
-            return true;
-         }
-      }
-      return false;
-   }
-
-void ENG_API Eng::Base::renderRay() {
-   if (_facesHit.empty() && _nodesHit.empty()) return;
-
-   glDisable(GL_LIGHTING);
-   glDisable(GL_TEXTURE_2D);
-
-   // Render through mode (cubes)
-   if (!_nodesHit.empty()) {
-      for (OctreeNode* node : _nodesHit) {
-         if (nodeColors.find(node) != nodeColors.end()) {
-            renderNodeAsCube(node, nodeColors[node]);
-         }
-      }
-   }
-   // Render surface mode (faces)
-   else if (!_facesHit.empty()) {
-      glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
-      glEnable(GL_POLYGON_OFFSET_FILL);
-      glPolygonOffset(1.0f, 1.0f);
-
-      for (size_t i = 0; i < _facesHit.size(); i++) {
-         glm::vec3 col;
-         if (i < colorType.size() && nodeColors.find(colorType[i]) != nodeColors.end()) {
-            col = nodeColors[colorType[i]];
-         }
-         else {
-            col = glm::vec3(1.0f, 0.0f, 0.0f);
-         }
-
-         glBegin(GL_TRIANGLES);
-         glColor3f(col.r, col.g, col.b);
-         glVertex3f(_facesHit[i]->_vertices[0]->x, _facesHit[i]->_vertices[0]->y, _facesHit[i]->_vertices[0]->z);
-         glVertex3f(_facesHit[i]->_vertices[1]->x, _facesHit[i]->_vertices[1]->y, _facesHit[i]->_vertices[1]->z);
-         glVertex3f(_facesHit[i]->_vertices[2]->x, _facesHit[i]->_vertices[2]->y, _facesHit[i]->_vertices[2]->z);
-         glEnd();
-      }
-
-      glDisable(GL_POLYGON_OFFSET_FILL);
-   }
-
-   glEnable(GL_LIGHTING);
-}
-
-void ENG_API Eng::Base::locateRaySurface() {
-   _facesHit.clear();
-   _nodesHit.clear();
-   colorType.clear();
-
-   if (!getCurrentScene()->hasRay()) return;
-
+   OctreeNode* rootNode = mesh->getOctreeRoot();
    std::vector<OctreeNode*> stack = { rootNode };
+   std::vector<OctreeNode*> savedNodes;
+
+    // face check
+   glm::vec3 orig(rayStart.x, rayStart.y, rayStart.z);
+   glm::vec3 dir(
+      rayEnd.x - rayStart.x,
+      rayEnd.y - rayStart.y,
+      rayEnd.z - rayStart.z
+   );
+
+   glm::vec3 intersectPos;
 
    while (!stack.empty()) {
       OctreeNode* node = stack.back();
       stack.pop_back();
 
-      if (!rayIntersectsNode(node)) continue;
+      if (node->check(flatTriangle)) continue;
 
       if (node->hasChildren()) {
          for (OctreeNode* child : node->getChildren()) {
@@ -917,102 +802,27 @@ void ENG_API Eng::Base::locateRaySurface() {
          }
       }
       else if (node->hasFaces()) {
+         savedNodes.push_back(node);
+
          for (const auto& f : node->getFaces()) {
-            if (rayIntersectsFace(f)) {
-               _facesHit.push_back(f);
-               colorType.push_back(node);
-               return; 
+            const auto& v0 = f->_vertices[0];
+            const auto& v1 = f->_vertices[1];
+            const auto& v2 = f->_vertices[2];
+
+            glm::vec3 vert0(v0->x, v0->y, v0->z);
+            glm::vec3 vert1(v1->x, v1->y, v1->z);
+            glm::vec3 vert2(v2->x, v2->y, v2->z);
+            if (intersectLineTriangle(orig, dir, vert0, vert1, vert2, intersectPos)) {
+               // check if intersection is within ray segment (0 <= t <= 1)
+               float t = glm::length(intersectPos - orig) / glm::length(dir);
+               if (t >= 0 && t <= 1) {
+
+                  mesh->setFaceHit(f);
+                  mesh->setNodesHit(savedNodes);
+                  return;
+               }
             }
          }
       }
    }
-}
-
-void ENG_API Eng::Base::locateRayThrough() {
-   _facesHit.clear();
-   _nodesHit.clear();
-   colorType.clear();
-
-   if (!getCurrentScene()->hasRay()) return;
-
-   std::vector<OctreeNode*> stack = { rootNode };
-
-   while (!stack.empty()) {
-      OctreeNode* node = stack.back();
-      stack.pop_back();
-
-      if (!rayIntersectsNode(node)) continue;
-
-      if (node->hasChildren()) {
-         for (OctreeNode* child : node->getChildren()) {
-            stack.push_back(child);
-         }
-      }
-      else if (node->hasFaces()) {
-         _nodesHit.push_back(node);
-
-         for (const auto& f : node->getFaces()) {
-            _facesHit.push_back(f);
-            colorType.push_back(node);
-         }
-      }
-   }
-
-   std::cout << "Ray passes through " << _nodesHit.size() << " nodes" << std::endl;
-}
-
-void ENG_API Eng::Base::renderNodeAsCube(OctreeNode* node, glm::vec3 color) {
-   glm::vec3 min = node->getLowerBounds();
-   glm::vec3 max = node->getUpperBounds();
-
-   glm::vec3 corners[8] = {
-       glm::vec3(min.x, min.y, min.z), // 0
-       glm::vec3(max.x, min.y, min.z), // 1
-       glm::vec3(max.x, max.y, min.z), // 2
-       glm::vec3(min.x, max.y, min.z), // 3
-       glm::vec3(min.x, min.y, max.z), // 4
-       glm::vec3(max.x, min.y, max.z), // 5
-       glm::vec3(max.x, max.y, max.z), // 6
-       glm::vec3(min.x, max.y, max.z)  // 7
-   };
-
-   int edges[12][2] = {
-       {0,1}, {1,2}, {2,3}, {3,0}, // bottom face
-       {4,5}, {5,6}, {6,7}, {7,4}, // top face
-       {0,4}, {1,5}, {2,6}, {3,7}  // vertical edges
-   };
-
-   glColor3f(color.r, color.g, color.b);
-   glBegin(GL_LINES);
-   for (int i = 0; i < 12; i++) {
-      glVertex3fv(&corners[edges[i][0]].x);
-      glVertex3fv(&corners[edges[i][1]].x);
-   }
-   glEnd();
-
-   glEnable(GL_BLEND);
-   glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-   glColor4f(color.r, color.g, color.b, 0.8f); // 20% transparency
-
-   glBegin(GL_QUADS);
-   // Bottom face
-   glVertex3fv(&corners[0].x); glVertex3fv(&corners[1].x);
-   glVertex3fv(&corners[2].x); glVertex3fv(&corners[3].x);
-   // Top face
-   glVertex3fv(&corners[4].x); glVertex3fv(&corners[5].x);
-   glVertex3fv(&corners[6].x); glVertex3fv(&corners[7].x);
-   // Front face
-   glVertex3fv(&corners[0].x); glVertex3fv(&corners[1].x);
-   glVertex3fv(&corners[5].x); glVertex3fv(&corners[4].x);
-   // Back face
-   glVertex3fv(&corners[3].x); glVertex3fv(&corners[2].x);
-   glVertex3fv(&corners[6].x); glVertex3fv(&corners[7].x);
-   // Left face
-   glVertex3fv(&corners[0].x); glVertex3fv(&corners[3].x);
-   glVertex3fv(&corners[7].x); glVertex3fv(&corners[4].x);
-   // Right face
-   glVertex3fv(&corners[1].x); glVertex3fv(&corners[2].x);
-   glVertex3fv(&corners[6].x); glVertex3fv(&corners[5].x);
-   glEnd();
-   glDisable(GL_BLEND);
 }

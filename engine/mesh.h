@@ -37,8 +37,16 @@ public:
        _faceHit = face;
     }
 
-    void setNodesHit(std::vector<OctreeNode*> nodes) {
+    void setNodesHit(const std::vector<OctreeNode*>& nodes) {
        _nodesHit = nodes;
+    }
+
+    void clearFaceHit() {
+       _faceHit = nullptr;
+    }
+
+    void clearNodesHit() {
+       _nodesHit.clear();
     }
 
 private:

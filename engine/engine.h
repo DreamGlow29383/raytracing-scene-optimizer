@@ -13,7 +13,6 @@
 #include <string>
 #include <functional>
 #include <glm/glm.hpp>
-#include "face.h"
 
 class Node;
 class Scene;
@@ -303,33 +302,11 @@ public:
     void setShowColoringSubmenu(bool show) { show_coloring_submenu = show; }
     bool getShowColoringSubmenu() const { return show_coloring_submenu; }
 
-    void castRaySurface(int x, int y);
+    void castRay(int x, int y);
 
-    void castRayThrough(int x, int y);
+    void castRay(glm::vec3 startPos, glm::vec3 endPos);
 
-    bool rayIntersectsNode(OctreeNode* node);
-
-    bool rayIntersectsFace(Face* face);
-
-    void setRayIntersectsFaceFlag() {
-       rayIntersectsFaceFlag = true;
-    }
-    void resetRayIntersectsFaceFlag() {
-       rayIntersectsFaceFlag = false;
-    }
-    bool getRayIntersectsFaceFlag() {
-       return rayIntersectsFaceFlag;
-    }
-
-    void setRootNode(OctreeNode* rootNode) {
-       this->rootNode = rootNode;
-    }
-
-    void addNodeColor(OctreeNode* node, glm::vec3 color) {
-       this->nodeColors[node] = color;
-    }
-
-    void renderRay();
+    void checkIntersection(glm::vec3 rayStart, glm::vec3 rayEnd);
 
 private:
     struct Reserved;
@@ -341,12 +318,6 @@ private:
     int windowId;
     bool rayIntersectsFaceFlag;
 
-    OctreeNode* rootNode;
-    std::vector<OctreeNode*> colorType;
-    std::vector<Face*> _facesHit;
-    std::vector<OctreeNode*> _nodesHit;
-    std::unordered_map<OctreeNode*, glm::vec3> nodeColors;
-
     bool show_node_boundaries = false;
     bool show_coloring_submenu = false;
     int coloring_mode = 0;
@@ -354,9 +325,6 @@ private:
 
     void addNode(Node* node);
     void addNodeTo(Node* parent, Node* node);
-    void locateRayThrough();
-    void locateRaySurface();
-    void renderNodeAsCube(OctreeNode* node, glm::vec3 color);
 
     Base();
 };
