@@ -119,16 +119,14 @@ public:
 	void setRay(glm::vec3 start, glm::vec3 end) {
 		_rayStart = start;
 		_rayEnd = end;
-		_showRay = true;
 	}
 
 	void clearRay() {
-		_showRay = false;
 		_rayStart = glm::vec3(0.0f);
 		_rayEnd = glm::vec3(0.0f);
 	}
 
-	bool hasRay() const { return _showRay; }
+	void setShowRay(bool show) { _showRay = show; }
 
 	glm::vec3 getRayStart() const {
 		return _rayStart;

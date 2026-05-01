@@ -406,6 +406,13 @@ void ENG_API Eng::Base::setColoringMode(int mode) {
     mesh->updateColorVBO(coloring_mode);
 }
 
+void ENG_API Eng::Base::setBenchmarkMode(int mode) {
+    benchmark_mode = mode;
+
+    Scene* scene = this->getCurrentScene();
+    scene->setShowRay(mode > 0);
+}
+
 std::vector<std::pair<uint64_t, OctreeNode*>> exportedNodes;
 void traverseOctree(uint64_t completeId, OctreeNode* node) {
     if (!node->hasChildren())
@@ -704,14 +711,18 @@ void ENG_API Eng::Base::importOctree(const std::string& infilepath) {
 
 }
 
-void ENG_API Eng::Base::castRay(glm::vec3 startPos, glm::vec3 endPos) {
-   Scene* scene = this->getCurrentScene();
+void ENG_API Eng::Base::castRay(glm::vec3 startPos, glm::vec3 direction, float distance) {
+    Scene* scene = this->getCurrentScene();
+    glm::vec3 endPos = startPos + glm::normalize(direction) * distance;
 
-   std::cout << "rayStart: (" << startPos.x << ", " << startPos.y << ", " << startPos.z << ")" << std::endl;
-   std::cout << "endPos: (" << endPos.x << ", " << endPos.y << ", " << endPos.z << ")" << std::endl;
+    //std::cout << "rayStart: (" << startPos.x << ", " << startPos.y << ", " << startPos.z << ")" << std::endl;
+    //std::cout << "endPos: (" << endPos.x << ", " << endPos.y << ", " << endPos.z << ")" << std::endl;
 
-   scene->setRay(startPos, endPos);
-   checkIntersection(startPos,endPos);
+    scene->setRay(startPos, endPos);
+    if (getBenchmarkMode() == 1 || getBenchmarkMode() == 3)
+        checkIntersection(startPos, endPos);        // optimized
+    else if (getBenchmarkMode() == 2)
+        checkIntersectionUnoptimized(startPos, endPos); // brute force
 }
 
 void ENG_API Eng::Base::castRay(int mouseX, int mouseY) {
@@ -745,40 +756,52 @@ void ENG_API Eng::Base::castRay(int mouseX, int mouseY) {
    glm::vec3 rayStart = glm::vec3((GLfloat)nearX, (GLfloat)nearY, (GLfloat)nearZ);
    glm::vec3 rayEnd = glm::vec3((GLfloat)farX, (GLfloat)farY, (GLfloat)farZ);
 
-   std::cout << "rayStart: (" << rayStart.x << ", " << rayStart.y << ", " << rayStart.z << ")" << std::endl;
-   std::cout << "rayEnd: (" << rayEnd.x << ", " << rayEnd.y << ", " << rayEnd.z << ")" << std::endl;
+   //std::cout << "rayStart: (" << rayStart.x << ", " << rayStart.y << ", " << rayStart.z << ")" << std::endl;
+   //std::cout << "rayEnd: (" << rayEnd.x << ", " << rayEnd.y << ", " << rayEnd.z << ")" << std::endl;
 
    scene->setRay(rayStart, rayEnd);
-   checkIntersection(rayStart,rayEnd);
+   if (getBenchmarkMode() == 1 || getBenchmarkMode() == 3)
+       checkIntersection(rayStart, rayEnd);        // optimized
+   else if (getBenchmarkMode() == 2)
+       checkIntersectionUnoptimized(rayStart, rayEnd); // brute force
+}
+
+bool rayIntersectsAABB(glm::vec3 orig, glm::vec3 dir, glm::vec3 mn, glm::vec3 mx) {
+    float tmin = 0.0f, tmax = 1.0f;
+    for (int i = 0; i < 3; i++) {
+        float d = dir[i];
+        float o = orig[i];
+        if (fabs(d) < 1e-8f) {
+            if (o < mn[i] || o > mx[i]) return false;
+        }
+        else {
+            float t0 = (mn[i] - o) / d;
+            float t1 = (mx[i] - o) / d;
+            if (t0 > t1) std::swap(t0, t1);
+            tmin = std::max(tmin, t0);
+            tmax = std::min(tmax, t1);
+            if (tmin > tmax) return false;
+        }
+    }
+    return true;
 }
 
 void ENG_API Eng::Base::checkIntersection(glm::vec3 rayStart, glm::vec3 rayEnd) {
 
-   Mesh* mesh = dynamic_cast<Mesh*>(getCurrentScene()->getNode(2));
+    if (getCurrentScene()->getNrOfChildren() <= 2)
+        return;
+
+   Mesh* mesh = dynamic_cast<Mesh*>(getCurrentScene()->getChild(2));
    if (mesh == nullptr) return;
 
    mesh->clearFaceHit();
    mesh->clearNodesHit();
 
-   Vertex* rayStartVertex = new Vertex();
-   rayStartVertex->x = rayStart.x;
-   rayStartVertex->y = rayStart.y;
-   rayStartVertex->z = rayStart.z;
-
-   Vertex* rayEndVertex = new Vertex();
-   rayEndVertex->x = rayEnd.x;
-   rayEndVertex->y = rayEnd.y;
-   rayEndVertex->z = rayEnd.z;
-
-   // node check
-   Face* flatTriangle = new Face();
-   flatTriangle->_vertices.push_back(rayStartVertex);
-   flatTriangle->_vertices.push_back(rayEndVertex);
-   flatTriangle->_vertices.push_back(rayEndVertex);
-
    OctreeNode* rootNode = mesh->getOctreeRoot();
    std::vector<OctreeNode*> stack = { rootNode };
    std::vector<OctreeNode*> savedNodes;
+   float closestT = FLT_MAX;
+   Face* closestFace = nullptr;
 
     // face check
    glm::vec3 orig(rayStart.x, rayStart.y, rayStart.z);
@@ -794,7 +817,7 @@ void ENG_API Eng::Base::checkIntersection(glm::vec3 rayStart, glm::vec3 rayEnd) 
       OctreeNode* node = stack.back();
       stack.pop_back();
 
-      if (node->check(flatTriangle)) continue;
+      if (!rayIntersectsAABB(orig, dir, node->getLowerBounds(), node->getUpperBounds())) continue;
 
       if (node->hasChildren()) {
          for (OctreeNode* child : node->getChildren()) {
@@ -812,17 +835,65 @@ void ENG_API Eng::Base::checkIntersection(glm::vec3 rayStart, glm::vec3 rayEnd) 
             glm::vec3 vert0(v0->x, v0->y, v0->z);
             glm::vec3 vert1(v1->x, v1->y, v1->z);
             glm::vec3 vert2(v2->x, v2->y, v2->z);
+
+            glm::vec3 edge1 = vert1 - vert0;
+            glm::vec3 edge2 = vert2 - vert0;
+            glm::vec3 faceNormal = glm::normalize(glm::cross(edge1, edge2));
+            glm::vec3 rayDir = glm::normalize(dir);
+
+            // Face normal faces the ray
+            if (glm::dot(faceNormal, rayDir) >= 0) continue;
+
             if (intersectLineTriangle(orig, dir, vert0, vert1, vert2, intersectPos)) {
                // check if intersection is within ray segment (0 <= t <= 1)
-               float t = glm::length(intersectPos - orig) / glm::length(dir);
-               if (t >= 0 && t <= 1) {
-
-                  mesh->setFaceHit(f);
-                  mesh->setNodesHit(savedNodes);
-                  return;
-               }
+                float t = glm::length(intersectPos - orig) / glm::length(dir);
+                if (t >= 0 && t <= 1 && t < closestT) {
+                    closestT = t;
+                    closestFace = f;
+                }
             }
          }
       }
    }
+
+   if (closestFace) {
+       mesh->setFaceHit(closestFace);
+       mesh->setNodesHit(savedNodes);
+   }
+}
+
+void ENG_API Eng::Base::checkIntersectionUnoptimized(glm::vec3 rayStart, glm::vec3 rayEnd) {
+    if (getCurrentScene()->getNrOfChildren() <= 2)
+        return;
+    Mesh* mesh = dynamic_cast<Mesh*>(getCurrentScene()->getChild(2));
+    if (mesh == nullptr) return;
+    mesh->clearFaceHit();
+    mesh->clearNodesHit();
+
+    glm::vec3 orig(rayStart.x, rayStart.y, rayStart.z);
+    glm::vec3 dir(rayEnd.x - rayStart.x, rayEnd.y - rayStart.y, rayEnd.z - rayStart.z);
+    glm::vec3 intersectPos;
+    float closestT = FLT_MAX;
+    Face* closestFace = nullptr;
+
+    for (const auto& f : mesh->getFaces()) {
+        const auto& v0 = f->_vertices[0];
+        const auto& v1 = f->_vertices[1];
+        const auto& v2 = f->_vertices[2];
+        glm::vec3 vert0(v0->x, v0->y, v0->z);
+        glm::vec3 vert1(v1->x, v1->y, v1->z);
+        glm::vec3 vert2(v2->x, v2->y, v2->z);
+        glm::vec3 faceNormal = glm::normalize(glm::cross(vert1 - vert0, vert2 - vert0));
+        if (glm::dot(faceNormal, glm::normalize(dir)) >= 0) continue;
+        if (intersectLineTriangle(orig, dir, vert0, vert1, vert2, intersectPos)) {
+            float t = glm::length(intersectPos - orig) / glm::length(dir);
+            if (t >= 0 && t <= 1 && t < closestT) {
+                closestT = t;
+                closestFace = f;
+            }
+        }
+    }
+
+    if (closestFace)
+        mesh->setFaceHit(closestFace);
 }

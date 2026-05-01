@@ -30,6 +30,8 @@ int _height;
 bool initialized = false;
 bool wireFrameMode = false;
 
+static auto lastRayTime = std::chrono::steady_clock::now();
+
 // FPS
 std::chrono::steady_clock::time_point fpsLastTime = std::chrono::steady_clock::now();
 int frameCount = 0;
@@ -106,6 +108,16 @@ void DrawMenuBar() {
 		}
 
 		if (ImGui::BeginMenu("Benchmark")) {
+			if (ImGui::MenuItem("Singular Raycast", nullptr, eng.getBenchmarkMode() == 3)) {
+				glm::vec3 origin(
+					((std::rand() % 2000) - 1000) / 100.0f,
+					((std::rand() % 2000) - 1000) / 100.0f,
+					((std::rand() % 2000) - 1000) / 100.0f
+				);
+				glm::vec3 direction = glm::normalize(glm::vec3(0.0f) - origin);
+				eng.setBenchmarkMode(3);
+				eng.castRay(origin, direction, 100.0f);
+			}
 			if (ImGui::MenuItem("Start Optimized", nullptr, eng.getBenchmarkMode() == 1)) {
 				eng.setBenchmarkMode(1);
 			}
@@ -226,55 +238,20 @@ void displayCallback()
 	ImGui::Render();
 	ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
 
-	/*
-	//////////////////////////
-    // 2D Text Rendering:
-
-	glMatrixMode(GL_PROJECTION);
-	glLoadMatrixf(glm::value_ptr(glm::mat4(1.0f)));
-	gluOrtho2D(0, _width, _height, 0);  // Top-left origin
-
-	glMatrixMode(GL_MODELVIEW);
-	glLoadMatrixf(glm::value_ptr(glm::mat4(1.0f)));
-
-	glDisable(GL_DEPTH_TEST);
-	glDisable(GL_LIGHTING);
-
-	glColor3f(1.0f, 1.0f, 1.0f);
-
-	// FPS text
-	std::string fpsStr = "FPS: " + std::to_string((int)fps);
-	float fpsWidth = 0.0f;
-	for (char c : fpsStr) {
-		fpsWidth += glutBitmapWidth(GLUT_BITMAP_8_BY_13, c);
-	}
-	glRasterPos2f(_width - fpsWidth - 10.0f, 20.0f);
-	for (char c : fpsStr) {
-		glutBitmapCharacter(GLUT_BITMAP_8_BY_13, c);
-	}
-
-	// Other text
-	float verticalShift = 20.0f * (currentScene->getTextLines().size());
-
-	for (const std::string& line : currentScene->getTextLines()) {
-		float lineWidth = 0.0f;
-		for (char c : line) {
-			lineWidth += glutBitmapWidth(GLUT_BITMAP_8_BY_13, c);
+	if (eng.getBenchmarkMode() > 0 && eng.getBenchmarkMode() < 3) {
+		auto now = std::chrono::steady_clock::now();
+		auto elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(now - lastRayTime).count();
+		if (elapsed >= 10) {
+			lastRayTime = now;
+			glm::vec3 origin(
+				((std::rand() % 2000) - 1000) / 100.0f,
+				((std::rand() % 2000) - 1000) / 100.0f,
+				((std::rand() % 2000) - 1000) / 100.0f
+			);
+			glm::vec3 direction = glm::normalize(glm::vec3(0.0f) - origin);
+			eng.castRay(origin, direction, 100.0f);
 		}
-
-		float xPos = _width - lineWidth - 10.0f;
-		float yPos = _height - verticalShift;
-
-		glRasterPos2f(xPos, yPos);
-		for (char c : line) {
-			glutBitmapCharacter(GLUT_BITMAP_8_BY_13, c);
-		}
-
-		verticalShift -= 20.0f;
 	}
-
-	//////////////////////////
-	*/
 
 	glutSwapBuffers();
 	glutPostWindowRedisplay(windowId);
@@ -320,12 +297,14 @@ void keyboardUpCallback(unsigned char key, int mouseX, int mouseY)
 void mouseCallback(int button, int state, int x, int y) {
 	ImGui_ImplGLUT_MouseFunc(button, state, x, y);
 
+	/*
 	Eng::Base& eng = Eng::Base::getInstance();
 	if (button == GLUT_LEFT_BUTTON && state == GLUT_DOWN) {
 		std::cout << "Mouse (left) clicked at: " << x << ", " << y << std::endl;
 		eng.castRay(x, y);
 		glutPostWindowRedisplay(windowId);
 	}
+	*/
 }
 
 void specialCallback(int key, int mouseX, int mouseY)

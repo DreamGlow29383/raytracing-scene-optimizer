@@ -296,17 +296,17 @@ public:
     void setColoringMode(int mode);
     int getColoringMode() const { return coloring_mode; }
 
-    void setBenchmarkMode(int mode) { benchmark_mode = mode; }
+    void setBenchmarkMode(int mode);
     int getBenchmarkMode() const { return benchmark_mode; }
 
     void setShowColoringSubmenu(bool show) { show_coloring_submenu = show; }
     bool getShowColoringSubmenu() const { return show_coloring_submenu; }
 
     void castRay(int x, int y);
-
-    void castRay(glm::vec3 startPos, glm::vec3 endPos);
+    void castRay(glm::vec3 startPos, glm::vec3 direction, float distance);
 
     void checkIntersection(glm::vec3 rayStart, glm::vec3 rayEnd);
+    void checkIntersectionUnoptimized(glm::vec3 rayStart, glm::vec3 rayEnd);
 
 private:
     struct Reserved;
