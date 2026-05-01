@@ -32,6 +32,9 @@ bool wireFrameMode = false;
 
 static auto lastRayTime = std::chrono::steady_clock::now();
 
+static long long totalTime = 0;
+static int rayCount = 0;
+
 // FPS
 std::chrono::steady_clock::time_point fpsLastTime = std::chrono::steady_clock::now();
 int frameCount = 0;
@@ -249,8 +252,18 @@ void displayCallback()
 				((std::rand() % 2000) - 1000) / 100.0f
 			);
 			glm::vec3 direction = glm::normalize(glm::vec3(0.0f) - origin);
+			auto start = std::chrono::high_resolution_clock::now();
 			eng.castRay(origin, direction, 100.0f);
+			auto end = std::chrono::high_resolution_clock::now();
+			totalTime += std::chrono::duration_cast<std::chrono::microseconds>(end - start).count();
+			rayCount++;
 		}
+	}
+
+	if (rayCount > 0 && rayCount % 300 == 0) {
+		std::cout << "Average over " << rayCount << " rays: " << (totalTime / rayCount) << " μs/ray" << std::endl;
+		totalTime = 0;
+		rayCount = 0;
 	}
 
 	glutSwapBuffers();
