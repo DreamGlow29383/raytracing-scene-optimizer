@@ -57,7 +57,7 @@
       <SubSystem>Windows</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <EnableUAC>false</EnableUAC>
-      <AdditionalLibraryDirectories>..\dependencies\freeglut\lib\$(Platform)\$(Configuration);..\dependencies\assimp\lib\$(Platform)\$(Configuration);..\dependencies\freeimage\lib\$(Platform)\$(Configuration);..\dependencies\glew\lib\$(Platform)\$(Configuration)</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>..\dependencies\freeglut\lib\$(Platform)\$(Configuration);..\dependencies\assimp\lib\$(Platform)\$(Configuration);..\dependencies\freeimage\lib\$(Platform)\$(Configuration)</AdditionalLibraryDirectories>
       <AdditionalDependencies>assimp-vc143-mtd.lib;%(AdditionalDependencies);..\dependencies\freeimage\lib\$(Platform)\$(Configuration)\FreeImage.lib;..\dependencies\glew\lib\$(Platform)\$(Configuration)\glew.lib</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
@@ -79,7 +79,7 @@
       <OptimizeReferences>true</OptimizeReferences>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <EnableUAC>false</EnableUAC>
-      <AdditionalLibraryDirectories>..\dependencies\freeglut\lib\$(Platform)\$(Configuration);..\dependencies\assimp\lib\$(Platform)\$(Configuration);..\depencies\freeimage\lib\$(Platform)\$(Configuration);..\dependencies\glew\lib\$(Platform)\$(Configuration)</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>..\dependencies\freeglut\lib\$(Platform)\$(Configuration);..\dependencies\assimp\lib\$(Platform)\$(Configuration);..\dependencies\freeimage\lib\$(Platform)\$(Configuration)</AdditionalLibraryDirectories>
       <AdditionalDependencies>assimp-vc143-mt.lib;%(AdditionalDependencies);..\dependencies\freeimage\lib\$(Platform)\$(Configuration)\FreeImage.lib;..\dependencies\glew\lib\$(Platform)\$(Configuration)\glew.lib</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
