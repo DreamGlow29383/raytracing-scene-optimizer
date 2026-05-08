@@ -113,6 +113,10 @@ void DrawMenuBar() {
 						eng.getCurrentScene()->computeRenderList();
 						printNodeHierarchy(eng.getCurrentScene());
 
+						eng.setColoringMode(0);
+						eng.setShowNodeBoundaries(false);
+						eng.setBenchmarkMode(0);
+
 						pendingFilePath.clear();
 					}
 					showConfigDialog = false;
@@ -214,6 +218,10 @@ void DrawMenuBar() {
 				eng.importOctree(filePath);
 				eng.getCurrentScene()->computeRenderList();
 				printNodeHierarchy(eng.getCurrentScene());
+
+				eng.setColoringMode(0);
+				eng.setShowNodeBoundaries(false);
+				eng.setBenchmarkMode(0);
 			}
 			ImGuiFileDialog::Instance()->Close();
 		}
