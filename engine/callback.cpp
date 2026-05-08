@@ -96,7 +96,10 @@ void DrawMenuBar() {
 				ImGui::Text("Configure Octree parameters for the new mesh:");
 				ImGui::Separator();
 
+				ImGui::Text("Max Octree Depth:");
 				ImGui::InputInt("##MaxDepthInput", &maxOctreeDepth);
+
+				ImGui::Text("Max Node Triangles:");
 				ImGui::InputInt("##MaxTrianglesInput", &maxNodeTriangles);
 
 				OctreeNode::MAX_DEPTH = std::clamp(maxOctreeDepth, 1, 20);
