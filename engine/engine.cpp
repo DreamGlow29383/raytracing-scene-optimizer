@@ -442,7 +442,7 @@ void ENG_API Eng::Base::exportOctree(const std::string& outfilepath) {
     const uint8_t version = 1;
     pushBytes(fileData, version);
 
-    const uint8_t max_depth = 10;
+    const uint8_t max_depth = OctreeNode::MAX_DEPTH;
     pushBytes(fileData, max_depth);
 
     Scene* scene = this->getCurrentScene();
@@ -719,7 +719,7 @@ void ENG_API Eng::Base::castRay(glm::vec3 startPos, glm::vec3 direction, float d
     //std::cout << "endPos: (" << endPos.x << ", " << endPos.y << ", " << endPos.z << ")" << std::endl;
 
     scene->setRay(startPos, endPos);
-    if (getBenchmarkMode() == 1 || getBenchmarkMode() == 3)
+    if (getBenchmarkMode() == 1 || getBenchmarkMode() >= 3)
         checkIntersection(startPos, endPos);        // optimized
     else if (getBenchmarkMode() == 2)
         checkIntersectionUnoptimized(startPos, endPos); // brute force
@@ -760,7 +760,7 @@ void ENG_API Eng::Base::castRay(int mouseX, int mouseY) {
    //std::cout << "rayEnd: (" << rayEnd.x << ", " << rayEnd.y << ", " << rayEnd.z << ")" << std::endl;
 
    scene->setRay(rayStart, rayEnd);
-   if (getBenchmarkMode() == 1 || getBenchmarkMode() == 3)
+   if (getBenchmarkMode() == 1 || getBenchmarkMode() >= 3)
        checkIntersection(rayStart, rayEnd);        // optimized
    else if (getBenchmarkMode() == 2)
        checkIntersectionUnoptimized(rayStart, rayEnd); // brute force

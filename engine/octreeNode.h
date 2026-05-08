@@ -5,14 +5,14 @@
 #include <vector>
 #include <glm/glm.hpp>
 
-static int MAX_FACES = 10;
-static int MAX_DEPTH = 10;
-
 class OctreeNode {
 public:
     OctreeNode(std::vector<Vertex*> allVertices, std::vector<Face*> allFaces);
     OctreeNode(glm::vec3 lowerCorner, glm::vec3 upperCorner, int depth, int id);
     ~OctreeNode();
+
+    static int MAX_FACES;
+    static int MAX_DEPTH;
 
     void insert(Face* face);
 

@@ -29,6 +29,10 @@ int _height;
 
 bool initialized = false;
 bool wireFrameMode = false;
+bool showConfigDialog = false;
+static std::string pendingFilePath = "";
+static int maxOctreeDepth = 5;
+static int maxNodeTriangles = 10;
 
 static auto lastRayTime = std::chrono::steady_clock::now();
 
@@ -84,6 +88,48 @@ void DrawMenuBar() {
 			ImGui::EndMenu();
 		}
 
+		// --- Octree Config ---
+		if (showConfigDialog) {
+			ImGui::OpenPopup("Octree Configuration");
+
+			if (ImGui::BeginPopupModal("Octree Configuration", NULL, ImGuiWindowFlags_AlwaysAutoResize)) {
+				ImGui::Text("Configure Octree parameters for the new mesh:");
+				ImGui::Separator();
+
+				ImGui::InputInt("##MaxDepthInput", &maxOctreeDepth);
+				ImGui::InputInt("##MaxTrianglesInput", &maxNodeTriangles);
+
+				OctreeNode::MAX_DEPTH = std::clamp(maxOctreeDepth, 1, 20);
+				OctreeNode::MAX_FACES = std::clamp(maxNodeTriangles, 1, 1000);
+
+				ImGui::Separator();
+
+				if (ImGui::Button("OK", ImVec2(120, 0))) {
+					if (!pendingFilePath.empty()) {
+						if (eng.getCurrentScene()->getNrOfChildren() > 2)
+							delete eng.getCurrentScene()->removeChild(2);
+
+						eng.addNodeFromFile(pendingFilePath);
+						eng.getCurrentScene()->computeRenderList();
+						printNodeHierarchy(eng.getCurrentScene());
+
+						pendingFilePath.clear();
+					}
+					showConfigDialog = false;
+					ImGui::CloseCurrentPopup();
+				}
+
+				ImGui::SameLine();
+
+				if (ImGui::Button("Cancel", ImVec2(120, 0))) {
+					pendingFilePath.clear();
+					showConfigDialog = false;
+					ImGui::CloseCurrentPopup();
+				}
+
+				ImGui::EndPopup();
+			}
+		}
 
 		// --- View Menu ---
 		if (ImGui::BeginMenu("View")) {
@@ -111,7 +157,7 @@ void DrawMenuBar() {
 		}
 
 		if (ImGui::BeginMenu("Benchmark")) {
-			if (ImGui::MenuItem("Singular Raycast", nullptr, eng.getBenchmarkMode() == 3)) {
+			if (ImGui::MenuItem("Single Random Raycast", nullptr, eng.getBenchmarkMode() == 3)) {
 				glm::vec3 origin(
 					((std::rand() % 2000) - 1000) / 100.0f,
 					((std::rand() % 2000) - 1000) / 100.0f,
@@ -120,6 +166,9 @@ void DrawMenuBar() {
 				glm::vec3 direction = glm::normalize(glm::vec3(0.0f) - origin);
 				eng.setBenchmarkMode(3);
 				eng.castRay(origin, direction, 100.0f);
+			}
+			if (ImGui::MenuItem("Mouse Raycast", nullptr, eng.getBenchmarkMode() == 4)) {
+				eng.setBenchmarkMode(4);
 			}
 			if (ImGui::MenuItem("Start Optimized", nullptr, eng.getBenchmarkMode() == 1)) {
 				eng.setBenchmarkMode(1);
@@ -149,11 +198,9 @@ void DrawMenuBar() {
 			if (ImGuiFileDialog::Instance()->IsOk()) {
 				std::string filePath = ImGuiFileDialog::Instance()->GetFilePathName();
 				std::cout << "Generate selected: " << filePath << std::endl;
-				if (eng.getCurrentScene()->getNrOfChildren() > 2)
-					delete eng.getCurrentScene()->removeChild(2);
-				eng.addNodeFromFile(filePath);
-				eng.getCurrentScene()->computeRenderList();
-				printNodeHierarchy(eng.getCurrentScene());
+
+				pendingFilePath = filePath;
+				showConfigDialog = true;
 			}
 			ImGuiFileDialog::Instance()->Close();
 		}
@@ -310,14 +357,12 @@ void keyboardUpCallback(unsigned char key, int mouseX, int mouseY)
 void mouseCallback(int button, int state, int x, int y) {
 	ImGui_ImplGLUT_MouseFunc(button, state, x, y);
 
-	/*
 	Eng::Base& eng = Eng::Base::getInstance();
-	if (button == GLUT_LEFT_BUTTON && state == GLUT_DOWN) {
+	if (button == GLUT_LEFT_BUTTON && state == GLUT_DOWN && eng.getBenchmarkMode() == 4) {
 		std::cout << "Mouse (left) clicked at: " << x << ", " << y << std::endl;
 		eng.castRay(x, y);
 		glutPostWindowRedisplay(windowId);
 	}
-	*/
 }
 
 void specialCallback(int key, int mouseX, int mouseY)

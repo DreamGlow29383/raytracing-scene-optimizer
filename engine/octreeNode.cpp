@@ -4,6 +4,8 @@
 #include <utility>
 #include <iostream>
 
+int OctreeNode::MAX_FACES = 10;
+int OctreeNode::MAX_DEPTH = 5;
 
 OctreeNode::OctreeNode(std::vector<Vertex*> allVertices, std::vector<Face*> allFaces) {
     glm::vec3 lowerCorner = glm::vec3(allVertices[0]->x, allVertices[0]->y, allVertices[0]->z);

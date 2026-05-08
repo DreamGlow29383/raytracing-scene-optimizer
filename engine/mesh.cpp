@@ -134,11 +134,6 @@ void Mesh::render(glm::mat4 cameraInverse)
     glMatrixMode(GL_MODELVIEW);
     glLoadMatrixf(glm::value_ptr(cameraInverse * this->getWC()));
 
-    if (eng.getBenchmarkMode() > 0) {
-        renderBenchmark();
-        return;
-    }
-
     glBindBuffer(GL_ARRAY_BUFFER, expandedVertexVBO);
     glVertexPointer(3, GL_FLOAT, 0, nullptr);
     glEnableClientState(GL_VERTEX_ARRAY);
@@ -176,6 +171,9 @@ void Mesh::render(glm::mat4 cameraInverse)
 
     if (eng.getShowNodeBoundaries())
         renderOctree(rootNode);
+
+    if (eng.getBenchmarkMode() > 0)
+        renderBenchmark();
 }
 
 void Mesh::renderOctree(OctreeNode* root)
@@ -244,7 +242,7 @@ void Mesh::printOctreeHierarchy(OctreeNode* node, const std::string& prefix, boo
 }
 
 glm::vec3 Mesh::computeDensityColor(size_t faceCount) {
-    const float maxFaces = MAX_FACES;
+    const float maxFaces = OctreeNode::MAX_FACES;
     float t = std::min((float)faceCount / maxFaces, 1.0f);
 
     glm::vec3 colors[] = {
@@ -264,7 +262,7 @@ glm::vec3 Mesh::computeDensityColor(size_t faceCount) {
 
 glm::vec3 Mesh::computeDepthColor(int depth)
 {
-    const float maxDepth = MAX_DEPTH;
+    const float maxDepth = OctreeNode::MAX_DEPTH;
     float t = std::min((float)depth / maxDepth, 1.0f);
 
     glm::vec3 colors[] = {
@@ -402,6 +400,7 @@ void Mesh::renderBenchmark()
 {
     glPushAttrib(GL_ALL_ATTRIB_BITS);
     glDisable(GL_LIGHTING);
+    glDisable(GL_DEPTH_TEST);
 
     static const int edges[12][2] = {
         {0,1},{1,2},{2,3},{3,0},
@@ -449,4 +448,5 @@ void Mesh::renderBenchmark()
     }
 
     glPopAttrib();
+    glEnable(GL_DEPTH_TEST);
 }
