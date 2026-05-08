@@ -79,25 +79,24 @@ OctreeNode::~OctreeNode() {
 
 void OctreeNode::split() {
 
-    // 1. We create 8 boxes and move the vertices into them
-
     float midX = (lowerBoundsCorner.x + upperBoundsCorner.x) / 2.0f;
     float midY = (lowerBoundsCorner.y + upperBoundsCorner.y) / 2.0f;
     float midZ = (lowerBoundsCorner.z + upperBoundsCorner.z) / 2.0f;
-    
-    float sideLength = abs(lowerBoundsCorner.x - upperBoundsCorner.x) / 2;
 
+    // Using explicit boundary values to avoid accumulated arithmetic error
+    float xs[3] = { lowerBoundsCorner.x, midX, upperBoundsCorner.x };
+    float ys[3] = { lowerBoundsCorner.y, midY, upperBoundsCorner.y };
+    float zs[3] = { lowerBoundsCorner.z, midZ, upperBoundsCorner.z };
+    
     std::vector<std::pair<glm::vec3, glm::vec3>> childCorners;
 
     for (int zdiff = 0; zdiff < 2; zdiff++) {
         for (int ydiff = 0; ydiff < 2; ydiff++) {
             for (int xdiff = 0; xdiff < 2; xdiff++) {
-                glm::vec3 corner1 = glm::vec3(
-                    lowerBoundsCorner.x + (sideLength * xdiff),
-                    lowerBoundsCorner.y + (sideLength * ydiff),
-                    lowerBoundsCorner.z + (sideLength * zdiff)
-                );
-                glm::vec3 corner2 = glm::vec3(corner1.x + sideLength, corner1.y + sideLength, corner1.z + sideLength);
+                glm::vec3 corner1 = glm::vec3(xs[xdiff], ys[ydiff], zs[zdiff]);
+                glm::vec3 corner2 = glm::vec3(xs[xdiff+1], ys[ydiff+1], zs[zdiff+1]);
+                children.push_back(new OctreeNode(corner1, corner2, node_depth + 1,
+                    zdiff * 4 + ydiff * 2 + xdiff));
 
                 childCorners.push_back({ corner1, corner2 });
             }

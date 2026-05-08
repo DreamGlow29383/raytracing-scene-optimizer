@@ -1,5 +1,4 @@
-# --- Root Makefile ---
-
+# Root Makefile
 ENGINE_DIR := engine
 CLIENT_DIR := client
 RES_DIR    := client/models
@@ -7,7 +6,6 @@ CONFIG ?= Debug
 
 OUTPUT_DIR    := artifacts
 ARTIFACT_NAME := CG_Group12_project_release.tar.gz
-
 
 all: pipeline
 
@@ -18,11 +16,6 @@ engine:
 client: engine
 	@echo "--- [2/3] Building Frontend (Client) ($(CONFIG)) ---"
 	$(MAKE) -C $(CLIENT_DIR) CONFIG=$(CONFIG) client
-
-test: engine
-	@echo "--- [3/3] Running Tests on Backend ---"
-#	$(MAKE) -C $(ENGINE_DIR) test
-
 
 package: client
 	@echo "--- Packaging Artifacts (No Rebuild) ---"

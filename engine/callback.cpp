@@ -18,10 +18,10 @@
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/type_ptr.hpp>
 
-#include <imgui.h>
-#include <ImGuiFileDialog.h>
-#include <backends/imgui_impl_glut.h>
-#include <backends/imgui_impl_opengl3.h>
+#include "../dependencies/imgui/imgui.h"
+#include "../dependencies/imgui-filediag/ImGuiFileDialog.h"
+#include "../dependencies/imgui/backends/imgui_impl_glut.h"
+#include "../dependencies/imgui/backends/imgui_impl_opengl3.h"
 
 int windowId = NULL;
 int _width;

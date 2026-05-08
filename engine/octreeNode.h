@@ -26,7 +26,7 @@ public:
     bool hasChildren() const { return !children.empty(); }
     std::vector<Face*> getFaces() const { return faces; }
     bool hasFaces() const { return !faces.empty(); }
-    void setFaces(std::vector<Face*> faces) { this->faces = faces; }
+    void setFaces(std::vector<Face*> faces) { this->faces = std::move(faces); }
     int getDepth() const { return node_depth; }
     int getId() const { return id; }
 private:

@@ -3,6 +3,7 @@
 #include <string>
 #include <vector>
 #include <iostream>
+#include <cstring>
 
 template <typename T>
 void pushBytes(std::vector<std::byte>& vec, const T& value) {

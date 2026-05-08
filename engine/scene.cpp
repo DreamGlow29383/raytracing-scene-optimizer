@@ -14,9 +14,16 @@ Scene::Scene() {
 }
 
 Scene::~Scene() {
-    for (const auto& nodePair : _nodes) {
-        delete(nodePair.second);
-    }
+    for (FrameEvent* e : _frameEvents)
+        delete e;
+    
+    for (auto& pair : _keyEvents)
+        for (KeyEvent* e : pair.second)
+            delete e;
+
+    for (const auto& nodePair : _nodes)
+        if (nodePair.second->getParent() == this)
+            delete nodePair.second;
 }
 
 void Scene::setAmbient(glm::vec4 ambient) {
