@@ -83,20 +83,19 @@ void OctreeNode::split() {
     float midY = (lowerBoundsCorner.y + upperBoundsCorner.y) / 2.0f;
     float midZ = (lowerBoundsCorner.z + upperBoundsCorner.z) / 2.0f;
 
-    // Using explicit boundary values to avoid accumulated arithmetic error
-    float xs[3] = { lowerBoundsCorner.x, midX, upperBoundsCorner.x };
-    float ys[3] = { lowerBoundsCorner.y, midY, upperBoundsCorner.y };
-    float zs[3] = { lowerBoundsCorner.z, midZ, upperBoundsCorner.z };
-    
+    float sideLength = abs(lowerBoundsCorner.x - upperBoundsCorner.x) / 2;
+
     std::vector<std::pair<glm::vec3, glm::vec3>> childCorners;
 
     for (int zdiff = 0; zdiff < 2; zdiff++) {
         for (int ydiff = 0; ydiff < 2; ydiff++) {
             for (int xdiff = 0; xdiff < 2; xdiff++) {
-                glm::vec3 corner1 = glm::vec3(xs[xdiff], ys[ydiff], zs[zdiff]);
-                glm::vec3 corner2 = glm::vec3(xs[xdiff+1], ys[ydiff+1], zs[zdiff+1]);
-                children.push_back(new OctreeNode(corner1, corner2, node_depth + 1,
-                    zdiff * 4 + ydiff * 2 + xdiff));
+                glm::vec3 corner1 = glm::vec3(
+                    lowerBoundsCorner.x + (sideLength * xdiff),
+                    lowerBoundsCorner.y + (sideLength * ydiff),
+                    lowerBoundsCorner.z + (sideLength * zdiff)
+                );
+                glm::vec3 corner2 = glm::vec3(corner1.x + sideLength, corner1.y + sideLength, corner1.z + sideLength);
 
                 childCorners.push_back({ corner1, corner2 });
             }
@@ -106,7 +105,7 @@ void OctreeNode::split() {
     for (unsigned char i = 0; i < childCorners.size(); i++) {
         children.push_back(new OctreeNode(childCorners[i].first, childCorners[i].second, node_depth + 1, i));
     }
-    
+
     int n = 0;
     for (Face* face : faces) {
         for (int i = 0; i < children.size(); i++) {
@@ -119,7 +118,7 @@ void OctreeNode::split() {
 
     if (n < faces.size())
         std::cout << "Warning: not all faces were inherited by children" << std::endl;
-    
+
     faces.clear();
 }
 
@@ -142,17 +141,17 @@ void OctreeNode::insert(Face* face) {
 
 bool OctreeNode::check(const Face* face) {
 
-   // small epsilon to avoid floating point errors
-   const float EPSILON = 0.0001f;
+    // small epsilon to avoid floating point errors
+    const float EPSILON = 0.0001f;
 
-    for (Vertex* v: face->_vertices)
+    for (Vertex* v : face->_vertices)
     {
         // check if vertices are inside the box
-        if (v->x >= lowerBoundsCorner.x - EPSILON && 
-            v->y >= lowerBoundsCorner.y - EPSILON && 
+        if (v->x >= lowerBoundsCorner.x - EPSILON &&
+            v->y >= lowerBoundsCorner.y - EPSILON &&
             v->z >= lowerBoundsCorner.z - EPSILON &&
-            v->x <= upperBoundsCorner.x + EPSILON && 
-            v->y <= upperBoundsCorner.y + EPSILON && 
+            v->x <= upperBoundsCorner.x + EPSILON &&
+            v->y <= upperBoundsCorner.y + EPSILON &&
             v->z <= upperBoundsCorner.z + EPSILON) {
             return true;
         }
@@ -160,37 +159,37 @@ bool OctreeNode::check(const Face* face) {
 
     // Check if any edge of the triangle intersects the cube
     for (int i = 0; i < 3; i++) {
-       Vertex* p1 = face->_vertices[i];
-       Vertex* p2 = face->_vertices[(i + 1) % 3];
+        Vertex* p1 = face->_vertices[i];
+        Vertex* p2 = face->_vertices[(i + 1) % 3];
 
-       // Liang-Barsky algorithm for line intersection
-       float t0 = 0.0f, t1 = 1.0f;
-       float dx = p2->x - p1->x;
-       float dy = p2->y - p1->y;
-       float dz = p2->z - p1->z;
+        // Liang-Barsky algorithm for line intersection
+        float t0 = 0.0f, t1 = 1.0f;
+        float dx = p2->x - p1->x;
+        float dy = p2->y - p1->y;
+        float dz = p2->z - p1->z;
 
-       float p[6] = { -dx, dx, -dy, dy, -dz, dz };
-       float q[6] = { p1->x - lowerBoundsCorner.x, upperBoundsCorner.x - p1->x,
-                     p1->y - lowerBoundsCorner.y, upperBoundsCorner.y - p1->y,
-                     p1->z - lowerBoundsCorner.z, upperBoundsCorner.z - p1->z };
+        float p[6] = { -dx, dx, -dy, dy, -dz, dz };
+        float q[6] = { p1->x - lowerBoundsCorner.x, upperBoundsCorner.x - p1->x,
+                      p1->y - lowerBoundsCorner.y, upperBoundsCorner.y - p1->y,
+                      p1->z - lowerBoundsCorner.z, upperBoundsCorner.z - p1->z };
 
-       bool intersect = true;
-       for (int j = 0; j < 6; j++) {
-          if (p[j] == 0) {
-             if (q[j] < 0) { intersect = false; break; }
-          }
-          else {
-             float t = q[j] / p[j];
-             if (p[j] < 0) {
-                if (t > t0) t0 = t;
-             }
-             else {
-                if (t < t1) t1 = t;
-             }
-          }
-       }
+        bool intersect = true;
+        for (int j = 0; j < 6; j++) {
+            if (p[j] == 0) {
+                if (q[j] < 0) { intersect = false; break; }
+            }
+            else {
+                float t = q[j] / p[j];
+                if (p[j] < 0) {
+                    if (t > t0) t0 = t;
+                }
+                else {
+                    if (t < t1) t1 = t;
+                }
+            }
+        }
 
-       if (intersect && t0 <= t1) return true;
+        if (intersect && t0 <= t1) return true;
     }
 
     return false;
